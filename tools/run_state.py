@@ -134,6 +134,30 @@ def _save(root: str, run_id: str, state: dict) -> None:
             raise
 
 
+def verify_decision_card(root: str, card_id: str) -> None:
+    """Hard gate for human-authorized escape hatches (--force / --provisional-advances).
+
+    The card id must be recorded in ``<root>/state.md`` — the pipeline's ledger of
+    human decisions. Passing an arbitrary string is not authorization: if state.md
+    is missing or does not mention the card id, the escape hatch stays closed.
+    ``card_0_autopilot`` (the blanket autopilot authorization card) is verified the
+    same way: it too must be recorded in state.md by a human before it authorizes
+    anything.
+    """
+    if not card_id or not card_id.strip():
+        raise ValueError("decision card id must be a non-empty string")
+    state_md = Path(root) / "state.md"
+    if not state_md.exists():
+        raise ValueError(
+            f"decision card {card_id!r} cannot be verified: {state_md} does not exist. "
+            "Escape hatches require a human approval recorded in state.md.")
+    text = state_md.read_text(encoding="utf-8", errors="replace")
+    if card_id not in text:
+        raise ValueError(
+            f"decision card {card_id!r} is not recorded in {state_md} — refusing the "
+            "escape hatch. A human must record the approval (card id) in state.md first.")
+
+
 def start_run(root: str, run_id: str, phases: list[str], executor: Optional[str] = "claude",
               provisional_advances: bool = False) -> dict:
     """Create a run with ordered phases, all `pending` (idempotent: won't clobber).
@@ -339,6 +363,8 @@ def main() -> int:
                 raise ValueError("--provisional-advances is a human-authorized escape hatch: "
                                  "pass --decision-card <id> referencing the human approval "
                                  "recorded in state.md; an agent must not enable it on its own.")
+            if a.provisional_advances:
+                verify_decision_card(a.root, a.decision_card)
             _print_status(start_run(a.root, a.run_id, [p.strip() for p in a.phases.split(",") if p.strip()], executor=a.executor, provisional_advances=a.provisional_advances))
         elif a.cmd == "set":
             _print_status(set_status(a.root, a.run_id, a.phase, a.status, a.artifact))
@@ -347,6 +373,8 @@ def main() -> int:
                 raise ValueError("--force is a human-authorized escape hatch: pass "
                                  "--decision-card <id> referencing the human approval "
                                  "recorded in state.md; an agent must not force-accept on its own.")
+            if a.force:
+                verify_decision_card(a.root, a.decision_card)
             _print_status(accept(a.root, a.run_id, a.phase, a.verdict_id, a.reviewer, force=a.force))
         elif a.cmd == "mark-provisional":
             _print_status(mark_provisional(a.root, a.run_id, a.phase, a.verdict_id, a.reviewer, executor=a.executor))

@@ -35,7 +35,9 @@ last_updated: "2026-03-17"
 **本整合包适配（ML/时序实验小样本规则）：**
 
 - **n=3 种子不要报 p 值**——检验功效不足，任何"显著"都不可信；报均值±标准差
-  （`mean ± std`，不要写"方差"除非真的报的是 variance）或极差。
+  （`mean ± std`，不要写"方差"除非真的报的是 variance）或极差。这是**硬策略**：
+  `run_comparison` 在最小组 n<5 时直接返回描述统计（p_value / significant 置
+  `None`），不会返回可被误写进论文的 p 值。
 - **≥5 种子**才考虑显著性检验；同种子/同数据集天然配对，用配对检验
   （小样本首选 Wilcoxon signed-rank；分布近似正态可用 paired t-test）。
 - **时序预测特有注意**：不同预测长度（96/192/336/720）与不同数据集的误差不可
@@ -257,11 +259,36 @@ def run_comparison(
 
     min_n = min(len(g) for g in groups)
     if min_n < 5:
-        import warnings
-        warnings.warn(
-            f"smallest group has n={min_n} < 5: p-values are unreliable at this sample "
-            "size \u2014 report mean/std (or range) instead of significance claims "
-            "(pack policy: no p-values at n=3).", stacklevel=2)
+        # HARD policy: below n=5 no p-value is returned at all — a warning is too
+        # easy to ignore and the p-value would end up in the paper. Descriptive
+        # statistics only.
+        note = (f"smallest group has n={min_n} < 5: statistical test not performed "
+                "(pack policy: no p-values below n=5 — report mean ± std or range, "
+                "not significance claims).")
+        result = {
+            "test_name": None,
+            "statistic": None,
+            "p_value": None,
+            "significant": None,
+            "alpha": alpha,
+            "effect_size": {},
+            "descriptives": [
+                {"n": int(len(g)),
+                 "mean": round(float(np.mean(g)), 4),
+                 "std": round(float(np.std(g, ddof=1)), 4) if len(g) > 1 else None,
+                 "min": round(float(np.min(g)), 4),
+                 "max": round(float(np.max(g)), 4)}
+                for g in groups
+            ],
+            "note": note,
+        }
+        if verbose:
+            print(f"No test run: {note}")
+            for i, d in enumerate(result["descriptives"]):
+                print(f"  group {i}: n={d['n']}, mean={d['mean']}, std={d['std']}, "
+                      f"range=[{d['min']}, {d['max']}]")
+            print()
+        return result
 
     # Check normality for each group
     all_normal = all(test_normality(g, alpha=alpha, verbose=False)["is_normal"] for g in groups)
