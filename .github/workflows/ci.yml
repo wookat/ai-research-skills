@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install pytest pyyaml
+      - name: Run test suite
+        run: python3 -m pytest tests -q
+      - name: Skill inventory & catalog drift check
+        run: python3 tools/check_pack_inventory.py
+      - name: Shell script syntax check
+        run: |
+          set -e
+          find . -name "*.sh" -not -path "./.git/*" -print0 | xargs -0 -n1 bash -n
+      - name: Python syntax check (tools + bundled skill scripts)
+        run: |
+          set -e
+          find tools skills -name "*.py" -not -path "./.git/*" -print0 | xargs -0 -n1 python3 -m py_compile
+      - name: Stale-reference scan (no hard-coded ~/.claude invocations in skills)
+        run: |
+          if grep -rnE '(python3?|bash|sh|node) +~/.claude/skills' skills --include='SKILL.md'; then
+            echo "error: hard-coded ~/.claude/skills invocation found in a SKILL.md" >&2
+            exit 1
+          fi

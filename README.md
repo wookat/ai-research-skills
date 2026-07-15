@@ -11,6 +11,10 @@
 决策卡机制）粘合成一条流水线。来源与修改范围见 [ATTRIBUTION.md](ATTRIBUTION.md)。
 Claude Code / Codex / Devin（含网页版）/ Cursor 通用。
 
+**快速入口**：不知道用哪个 skill？查一页式路由表
+[docs/TASK_ROUTING.md](docs/TASK_ROUTING.md)；全部 skill 清单见
+[docs/SKILLS_CATALOG.md](docs/SKILLS_CATALOG.md)（自动生成，CI 校验漂移）。
+
 ## 流水线总览
 
 ```
@@ -122,6 +126,22 @@ skill 被全局安装（如 `~/.claude/skills/`）、从任意项目目录调用
 `research_run/<课题slug>/decision_cards/`），包含：阶段结论、证据摘要、
 可选项（含各自风险）、agent 推荐项、等待人类批示的明确问题。
 **人未批示前不得跨阶段推进。** 这是"人做监督者"模式的硬约束。
+逃生口（`run_state.py` 的 `--force` / `--provisional-advances`）做**硬校验**：
+必须 `--decision-card <卡号>` 且该卡号确实记录在 `state.md` 中，编造卡号无法通过。
+
+### 全自主模式（autopilot）
+
+人类也可以选择**全流程放权**：在 `state.md` 记录一张 `card_0_autopilot` 总授权卡
+（写明放权范围与边界）后，agent 在每张决策卡处改由零上下文、优先跨族的子会话/
+子智能体独立裁决并把裁决理由记入 `state.md`，人类可随时回看或叫停。**不可逆动作
+（真实投稿、公开发布、花钱）仍然必须等人类批示。**
+详见 `skills/research-pipeline/SKILL.md` 的"全自主模式"节。
+
+## CI
+
+仓库自带 GitHub Actions（`.github/workflows/ci.yml`）：pytest 全量测试、skill
+frontmatter 与 SKILLS_CATALOG 漂移校验（`tools/check_pack_inventory.py`）、全部
+shell/Python 脚本语法检查、平台锁定路径回归扫描。
 
 ## License 与来源
 

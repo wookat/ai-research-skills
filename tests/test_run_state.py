@@ -285,3 +285,43 @@ if __name__ == "__main__":
             print(f"  FAIL {t.__name__}: {e}"); failed += 1
     print(f"\n{passed} passed, {failed} failed")
     sys.exit(1 if failed else 0)
+
+
+def test_verify_decision_card_requires_state_md():
+    with _tmp() as d:
+        try:
+            rs.verify_decision_card(d, "card_2_立项拍板")
+            raised = False
+        except ValueError:
+            raised = True
+        assert raised, "verify_decision_card must fail when state.md does not exist"
+
+
+def test_verify_decision_card_rejects_unrecorded_card():
+    with _tmp() as d:
+        (Path(d) / "state.md").write_text("# state\n人类批示：card_1_选idea → 选项A\n", encoding="utf-8")
+        try:
+            rs.verify_decision_card(d, "card_9_fabricated")
+            raised = False
+        except ValueError:
+            raised = True
+        assert raised, "a card id absent from state.md must be rejected"
+
+
+def test_verify_decision_card_accepts_recorded_card():
+    with _tmp() as d:
+        (Path(d) / "state.md").write_text(
+            "# state\n人类批示：card_0_autopilot 授权范围：阶段0-6 自裁\n", encoding="utf-8")
+        rs.verify_decision_card(d, "card_0_autopilot")  # must not raise
+
+
+def test_verify_decision_card_rejects_empty_id():
+    with _tmp() as d:
+        (Path(d) / "state.md").write_text("anything", encoding="utf-8")
+        for bad in ("", "   "):
+            try:
+                rs.verify_decision_card(d, bad)
+                raised = False
+            except ValueError:
+                raised = True
+            assert raised, "empty card id must be rejected"

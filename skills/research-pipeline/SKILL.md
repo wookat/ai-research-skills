@@ -92,9 +92,33 @@ python3 tools/run_state.py accept research_run/<slug> <run_id> <stageN> \
 ```
 
 状态非 accepted 时**禁止推进下一阶段**。这把决策卡从 prose 约束升级为可验证的
-artifact 检查。**逃生口需人类授权**：`start --provisional-advances` 与
-`accept --force` 属绕过强制的逃生口，只有当 state.md 中已记录对应决策卡编号的
-人类批示时才允许使用，agent 不得自行开启。
+artifact 检查。**逃生口需人类授权（硬校验）**：`start --provisional-advances` 与
+`accept --force` 属绕过强制的逃生口，必须 `--decision-card <卡号>`，且
+run_state.py 会实际读取 `research_run/<slug>/state.md` 校验该卡号确实已被人类
+批示记录——卡号不存在即拒绝执行，agent 编造卡号无法绕过。
+
+## 全自主模式（autopilot）
+
+默认模式是"人类在 4 张决策卡处批示"。当人类明确要求**全流程放权**时，切换到
+autopilot 模式，规则如下：
+
+1. **总授权卡**：人类在 `state.md` 中记录一张 `card_0_autopilot` 授权卡，写明
+   放权范围与边界（允许自裁的阶段、预算/时间上限、终止条件）。没有这张卡记录在
+   state.md 中，agent 不得进入 autopilot——这与逃生口共用同一硬校验机制
+   （run_state.py 会读 state.md 验证卡号）。
+2. **AI 自裁决策卡**：每到决策卡节点，仍然照常产出决策卡文件，但不等待人类——
+   为该卡开一个**零上下文、优先跨族**的子会话/子智能体（按
+   shared-references/reviewer-adapter.md 选后端）做独立评估，按其结论选定选项，
+   并把"裁决选项 + 理由 + 裁决者（模型/后端）+ 时间"追加记入 `state.md`。
+   禁止主上下文自问自答式裁决。
+3. **不可逆动作仍留给人类**：真实投稿（提交到会议/期刊系统）、公开发布
+   （开源仓库转 public、发布宣传物料）、任何花钱动作，在 autopilot 下也必须停下
+   出决策卡等人类批示——总授权卡不覆盖这些。
+4. **可审计、可叫停**：所有自裁记录集中在 state.md，人类可随时回看；人类发出
+   任何暂停/收回指令后，立即退回默认决策卡模式，并对收回后的第一张卡重新等待
+   人类批示。
+5. **失败保护**：同一阶段连续 2 次自裁后仍无进展（阶段回退循环），强制出临时
+   决策卡等人类——autopilot 不允许无限自旋。
 
 ## 脚本化 skill 的初始化（首次使用）
 
