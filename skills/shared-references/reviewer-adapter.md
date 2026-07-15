@@ -14,7 +14,10 @@ citation-audit / patent-review / proof-checker 等）在调用外部评审器
 | 5 | 新对话（人工中转） | 上述子智能体机制都不可用时 | 请用户在新窗口/新 chat 粘贴 prompt + 文件，把回复存为 `review-stage/round<N>_review.md` 后继续（即 ARIS "manual backend" 的通用化） |
 | 6 | 同模型降级 | 以上皆不可用 | 同模型执行评审 prompt，但报告头部标注 `⚠ same-model self-review, scores may be inflated`，且结论不得作为决策卡的唯一依据 |
 
-**关于后端 4（推荐）**：Claude Code / Cursor / Codex / Devin 网页版**都**能派生子智能体或子会话，因此"新鲜零上下文评审器"在四个平台都可自动实现，无需人工中转。子智能体优先用与主 agent **不同的模型**（真正跨模型）；即便同模型，只要是零上下文新实例，也已消除"同上下文自评刷分"的失效模式。仅当平台确实无法派生子智能体时才降到后端 5/6。
+**关于后端 4（推荐）**：Claude Code / Cursor / Codex / Devin 网页版**都**能派生子智能体或子会话，因此"新鲜零上下文评审器"在四个平台都可自动实现，无需人工中转。子智能体优先用与主 agent **不同的模型**（真正跨模型）；即便同模型，只要是零上下文新实例，也已消除"同上下文自评刷分"的失效模式。仅当平台确实无法派生子智能体时才降到后端 5/6。无论哪个后端，verdict 元数据必须
+如实记录 reviewer 模型名与后端编号；同模型/同族后端（含后端 6 自评）的正向结论
+只能记为 provisional，只能驱动修复（reject/drive），不能作为质量达标结论
+（acquit）或循环正向停止依据（见 acceptance-gate.md）。
 
 ## 通道无关的硬规则（无论用哪个后端）
 
@@ -22,6 +25,11 @@ citation-audit / patent-review / proof-checker 等）在调用外部评审器
   在任何后端都必须是零上下文新调用（cross-model-review 协议）。
 - **续评（threadId 复用）的等价实现**：后端 2 用 resume；后端 3/5 靠把
   `review-stage/` 里的历史评审文件列为输入；后端 4 在同一子智能体/子会话内追问。
+  **使用前提（硬规则）**：续评通道只允许用于原文明确允许的场景——同一轮内的
+  Debate Protocol 裁决、resolution check（逐项确认旧 issue 是否已解决）。续评产出
+  **不得生成新的 verdict/score**，不得满足任何循环的正向停止条件；新一轮 verdict
+  必须是零上下文新调用。把历史评审文件列为输入（后端 3/5）时，只附客观事实
+  （issue ID/文件位置），不附历史分数与主观结论（见 reviewer-independence.md）。
 - 评审输入输出全部落盘到 `review-stage/`，与后端无关；换后端不改产物格式。
 - REVIEWER_DIFFICULTY=nightmare（评审器直读仓库）仅后端 1/2/4 支持；其余降为 hard。
 

@@ -189,3 +189,6 @@ Practical triggers:
 - `.aris/traces/` should be in `.gitignore` — traces are project-local, never committed
 - Traces may contain sensitive research content; treat them as confidential
 - Use `--- trace: off` for projects with strict confidentiality requirements
+- 落盘前脱敏：prompt/response 中不得原样保留 API key、token、密码、私有 URL
+  含凭证的片段——写入 trace 前替换为 `[REDACTED]`；若评审输入本身包含 `.env` 等
+  文件内容，整段剔除后再落盘

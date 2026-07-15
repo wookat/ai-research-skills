@@ -2,7 +2,7 @@
 
 > **本整合包适配：**本包不附带 `install_aris*.sh` / `smart_update*.sh`；`~/.aris/repo`
 > 全局指针由包根目录的 `bash install.sh` 写入。本包 `tools/research_wiki.py` 已收录
->（按 `skills/research-wiki/SKILL.md` 文档接口的 clean-room 实现），安装后解析链
+>（上游 ARIS 原实现，MIT），安装后解析链
 > 即可命中；仅当解析链仍未命中时才按该 SKILL 的手工维护降级处理，不要卡死流程。
 
 Canonical resolution chain for the research-wiki helper. Used by every
@@ -39,8 +39,8 @@ The skill **is** the wiki tool. If the helper is missing, fail loudly.
 [ -f "$WIKI_SCRIPT" ] || {
   echo "ERROR: research_wiki.py not found at .aris/tools/, tools/, \$ARIS_REPO/tools/, or via ~/.aris/repo." >&2
   echo "       Fix one of:" >&2
-  echo "         1. rerun 'bash tools/install_aris.sh' from the ARIS repo (creates .aris/tools symlink, refreshes ~/.aris/repo)" >&2
-  echo "         2. rerun 'bash tools/smart_update.sh' (refreshes ~/.aris/repo)" >&2
+  echo "         1. run 'bash install.sh' at the pack root (writes ~/.aris/repo)" >&2
+  echo "         2. export ARIS_REPO=<pack-root>" >&2
   echo "         3. export ARIS_REPO=<path-to-ARIS-repo>" >&2
   echo "         4. cp <ARIS-repo>/tools/research_wiki.py tools/" >&2
   exit 1
@@ -59,7 +59,7 @@ skipped.
 [ -f "$WIKI_SCRIPT" ] || {
   echo "WARN: research_wiki.py not found at .aris/tools/, tools/, \$ARIS_REPO/tools/, or via ~/.aris/repo." >&2
   echo "      Primary output will still be produced; wiki update is skipped." >&2
-  echo "      Fix: rerun 'bash tools/install_aris.sh' or 'smart_update.sh' (refreshes ~/.aris/repo), export ARIS_REPO, or 'cp <ARIS-repo>/tools/research_wiki.py tools/'." >&2
+  echo "      Fix: run 'bash install.sh' at the pack root (writes ~/.aris/repo), export ARIS_REPO, or 'cp <pack-root>/tools/research_wiki.py tools/'." >&2
   WIKI_SCRIPT=""
 }
 ```

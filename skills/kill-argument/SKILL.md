@@ -45,3 +45,6 @@ description: Adversarial attack-defense exercise on a near-final paper - a fresh
 - 攻击线程必须"必须下注"：只许一个最强论证，禁止摊平成弱点清单。
 - 防御不得稻草人化攻击；每个原子点原文引用后再回应。
 - `still_unresolved` 为空时要警惕评审隔离是否失效（同上下文互相放水）。
+- 攻防与裁决三个线程的 prompt/response 均按 `shared-references/review-tracing.md`
+  用 `tools/save_trace.sh` 落 `.aris/traces/`（skill 名 `kill-argument`），
+  与其他 verdict 类评审同等留痕，便于事后复盘攻击线是否被稻草人化。

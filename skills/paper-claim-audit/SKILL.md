@@ -5,6 +5,8 @@ argument-hint: "[paper-directory]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, mcp__codex__codex
 ---
 
+> **Fallback（本整合包补充）**：若 `mcp__codex__codex` 不可用，按本包 `skills/shared-references/reviewer-adapter.md` 的降级链适配（CLI → 零上下文子智能体/子会话 → 新对话人工中转）；本 skill 是 verdict 类审计，同模型降级评审只可给出 FAIL/WARN，不得作为 PASS 依据（见 acceptance-gate.md）。
+
 # Paper Claim Audit: Zero-Context Evidence Verification
 
 > 🔒 **Do not wrap this skill in `/loop`, `/schedule`, or `CronCreate`.** It is

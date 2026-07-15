@@ -324,9 +324,9 @@ def _print_status(state: dict) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description="ARIS resumable run-state (done vs accepted).")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("start"); s.add_argument("root"); s.add_argument("run_id"); s.add_argument("--phases", required=True, help="comma-separated phase names"); s.add_argument("--executor", default="claude"); s.add_argument("--provisional-advances", action="store_true", help="per-run policy: let a same-family provisional verdict close a phase for resume (Codex-native mirror only; mainline default keeps cross-family-only advance)")
+    s = sub.add_parser("start"); s.add_argument("root"); s.add_argument("run_id"); s.add_argument("--phases", required=True, help="comma-separated phase names"); s.add_argument("--executor", default="claude"); s.add_argument("--provisional-advances", action="store_true", help="per-run policy: let a same-family provisional verdict close a phase for resume (Codex-native mirror only; mainline default keeps cross-family-only advance)"); s.add_argument("--decision-card", help="human decision-card id authorizing --provisional-advances (required with that flag)")
     s = sub.add_parser("set"); s.add_argument("root"); s.add_argument("run_id"); s.add_argument("phase"); s.add_argument("status", choices=sorted(EXECUTOR_STATUSES)); s.add_argument("--artifact")
-    s = sub.add_parser("accept"); s.add_argument("root"); s.add_argument("run_id"); s.add_argument("phase"); s.add_argument("--verdict-id", required=True); s.add_argument("--reviewer", required=True); s.add_argument("--force", action="store_true")
+    s = sub.add_parser("accept"); s.add_argument("root"); s.add_argument("run_id"); s.add_argument("phase"); s.add_argument("--verdict-id", required=True); s.add_argument("--reviewer", required=True); s.add_argument("--force", action="store_true"); s.add_argument("--decision-card", help="human decision-card id authorizing --force (required with that flag)")
     s = sub.add_parser("mark-provisional"); s.add_argument("root"); s.add_argument("run_id"); s.add_argument("phase"); s.add_argument("--verdict-id", required=True); s.add_argument("--reviewer", required=True); s.add_argument("--executor")
     s = sub.add_parser("resume"); s.add_argument("root"); s.add_argument("run_id")
     s = sub.add_parser("status"); s.add_argument("root"); s.add_argument("run_id")
@@ -335,10 +335,18 @@ def main() -> int:
 
     try:
         if a.cmd == "start":
+            if a.provisional_advances and not a.decision_card:
+                raise ValueError("--provisional-advances is a human-authorized escape hatch: "
+                                 "pass --decision-card <id> referencing the human approval "
+                                 "recorded in state.md; an agent must not enable it on its own.")
             _print_status(start_run(a.root, a.run_id, [p.strip() for p in a.phases.split(",") if p.strip()], executor=a.executor, provisional_advances=a.provisional_advances))
         elif a.cmd == "set":
             _print_status(set_status(a.root, a.run_id, a.phase, a.status, a.artifact))
         elif a.cmd == "accept":
+            if a.force and not a.decision_card:
+                raise ValueError("--force is a human-authorized escape hatch: pass "
+                                 "--decision-card <id> referencing the human approval "
+                                 "recorded in state.md; an agent must not force-accept on its own.")
             _print_status(accept(a.root, a.run_id, a.phase, a.verdict_id, a.reviewer, force=a.force))
         elif a.cmd == "mark-provisional":
             _print_status(mark_provisional(a.root, a.run_id, a.phase, a.verdict_id, a.reviewer, executor=a.executor))

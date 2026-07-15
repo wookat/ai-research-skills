@@ -71,10 +71,17 @@ ARIS 原件中引用未收录 skill 的地方，按 `skills/shared-references/pa
 - **Devin（含网页版）**：拷贝到仓库 `.agents/skills/`
 - **Cursor**：拷贝到项目内，在 `.cursor/rules/`（或 `AGENTS.md`）中引用各 SKILL.md 路径
 
-`tools/` 目录与 `skills/` 平级拷贝，收录全部 canonical helper：`research_wiki.py`
-（研究 wiki 知识库）、`run_state.py`（阶段状态机）、`verify_paper_audits.sh`
-（投稿前三审计校验 gate）、`verify_wiki_coverage.sh`（wiki 覆盖诊断）、
-`save_trace.sh`（评审留痕）、`capture_filter.py`（防自毒筛查）、`experiment_queue/`
+`tools/` 目录与 `skills/` 平级拷贝，收录全部 canonical helper（绝大多数为上游
+ARIS 原实现，MIT，见 ATTRIBUTION.md）：`research_wiki.py`（研究 wiki 知识库）、
+`run_state.py`（阶段状态机，逃生口需 `--decision-card` 人类授权）、`provenance.py`
+（跨族门禁，未知族 fail-closed）、`evidence_check.py`（claim 证据核查）、
+`forensics_gate.py`（取证 gate）、`verify_papers.py` 与 `verify_paper_audits.sh`
+（投稿前审计校验 gate）、`verify_wiki_coverage.sh`（wiki 覆盖诊断）、
+`save_trace.sh`（评审留痕）、`capture_filter.py`（防自毒筛查）、
+`overleaf_setup.sh` / `overleaf_audit.sh`（Overleaf 安全接入与 token 审计）、
+`threat_scan.py`、`figure_renderer.py`、`paper_illustration_image2.py`、
+`arxiv_fetch.py` / `openalex_fetch.py` / `semantic_scholar_fetch.py` /
+`deepxiv_fetch.py` / `exa_search.py`（文献 fetcher）、`experiment_queue/`
 （GPU 排队）等。评审器后端适配见
 `skills/shared-references/reviewer-adapter.md`：有 MCP 走 MCP，没有则自动降到
 CLI / 子会话 / 新对话人工中转，四平台都能用。

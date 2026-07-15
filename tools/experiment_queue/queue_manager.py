@@ -32,7 +32,7 @@ def main() -> int:
             "       Phase 3.3 moved this helper into the\n"
             "       /experiment-queue SKILL ('skills/experiment-queue/scripts/').\n"
             "       Your local checkout may be incomplete — try `git pull`\n"
-            "       or rerun `bash tools/install_aris.sh` to refresh the\n"
+            "       or run `bash install.sh` at the pack root to refresh the\n"
             "       project-local symlink chain.\n"
         )
         return 1

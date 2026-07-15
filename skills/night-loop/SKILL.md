@@ -31,10 +31,23 @@ description: Unattended overnight research iteration - runs bounded experiment/t
 | PATIENCE | 8 | 连续无改进即早停 |
 | OBJECTIVE | 领域模块指标 | 必须机器可判（如 val MSE） |
 
+## 启动前 preflight（硬性检查，任一不过即不开跑）
+
+1. `night_plan.md` 存在且含全部循环参数（TIMEOUT/MAX_ITERATIONS/PATIENCE/OBJECTIVE）
+   与人类确认记录（谁、何时确认）。
+2. git 工作树干净（`git status --porcelain` 为空），或脏文件已列入 night_plan 的
+   已知例外清单——夜跑绝不能在未提交的手工改动上叠加自动改动。
+3. 写入目录白名单已在 night_plan 中列出（如 `night_runs/`、`checkpoints/`、
+   实验输出目录）；循环内一切写操作只落白名单内。
+4. 磁盘/显存余量满足预算；不足则缩减计划并在 night_plan 标注。
+
 ## 安全铁律
 
 - 禁止：`sudo`、递归删除、删除非本会话创建的文件、覆盖未读过的源文件、
   任何 git push/reset、杀死非本会话启动的进程。需要其中任何一项 → 停止并留言。
+- **明示边界**：以上禁令是对 agent 的行为约定，不是操作系统级 sandbox——本 skill
+  不提供技术性隔离。若需要硬隔离（容器、只读挂载、受限用户），由人类在启动前
+  自行配置，并把配置记入 night_plan.md；不要向用户暗示禁令具有技术强制力。
 - 每次迭代前检查磁盘/显存余量；资源不足优雅收尾而不是崩掉半夜的队列。
 - 崩溃可恢复：迭代状态落盘（`night_runs/<日期>/state.json`），重启后从断点续跑。
 

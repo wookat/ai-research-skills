@@ -44,3 +44,11 @@ Always include:
 1. Raw data table
 2. Key findings (numbered, concise)
 3. Suggested next experiments (if any)
+
+## 统计纪律（本整合包硬规则）
+
+任何"A 优于 B"的结论必须遵守 `skills/statistical-testing/SKILL.md` 的小样本
+规则：n=3 种子只报 mean ± std / 极差，不报 p 值；≥5 种子的配对比较才做显著性
+检验（默认 Wilcoxon signed-rank 或 Welch）；多个比较记入 comparison ledger
+并做 Holm / BH-FDR 校正。分析产出的每一条对比结论都要注明种子数与检验方式
+（或注明"未做检验，仅描述统计"）。

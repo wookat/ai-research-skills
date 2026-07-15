@@ -91,6 +91,15 @@ A paper is a **high-potential candidate** if **any** of the following hold:
 
 Cap the candidate set at the top **3–7 papers** *after* triage — the cap applies to the post-filter selection, not the Step 3 input set, so a large search + recall pool is fine as long as you narrow it here. If more than 7 papers qualify, keep the 7 with the highest overlap score (breaking ties in favor of mechanism matches and recency). If fewer than 3 papers meet the criteria, lower the threshold and include the next-most-similar papers so that the deep-dive in Step 5 still has meaningful coverage. List the candidates explicitly with the reason each was selected.
 
+**Crowded-route exception (本整合包补充)** — if the idea sits on a route flagged as
+high-crowding by the domain evidence base (e.g., `domains/time-series-forecasting.md`
+route statistics) or the triage pool has ≥10 papers with overlap ≥ 2, raise the cap
+to **10–12** and add one round of **snowballing**: for the top-3 closest candidates,
+walk their related-work/citations (backward) and their citing papers (forward, via
+Semantic Scholar / Google Scholar "cited by") and triage anything new. The domain
+evidence base itself is a *preliminary screening* aid only — never a substitute for
+live retrieval; final novelty judgments must come from Step 5 full-text verification.
+
 ### Step 5 — Full-Paper Deep Dive on Candidates
 
 For each high-potential candidate, retrieve and read the full paper using the recipe below. Don't shortcut by handing the PDF URL to `WebFetch` directly — it returns a model-written summary that drops the methodological detail this step exists to capture.
@@ -166,6 +175,14 @@ A higher level means **more novel** (less overlap with prior work): Level 5 = no
 
 The overall verdict is determined by the strongest (most-overlapping) entry: take the **worst case** — the **minimum level** across all prior works, since the single closest prior work caps the novelty. If there are no prior works at all, the verdict is Level 5 (No Overlap). This explicit mapping is what the Report's Verdict section consumes — do not introduce a different rule there.
 
+**Mechanism-axis escalation (本整合包硬规则)** — the four axes are *not* equally
+dangerous. If any prior work matches on **core mechanism + key insight** (verified
+against the full text), the verdict is capped at **Level 2 — High Overlap** even
+if problem framing and application domain differ (equal weighting would dilute
+this to Level 3): a same-mechanism-same-insight paper in a different domain is a
+trivially-portable collision. A verified match on **core mechanism alone** caps
+the verdict at Level 3 and must be called out explicitly in the delta statement.
+
 ### Step 7 — Articulate the Delta
 
 Produce a one-sentence delta statement in this form:
@@ -201,6 +218,6 @@ Render the final report inline in the conversation as a single, self-contained m
 ## Important Notes
 
 - **Negative results are valuable.** A thorough search that returns nothing is itself evidence of novelty — document the queries used.
-- **Persist the report（本整合包契约）.** In addition to displaying it, write the complete final report to `research_run/<课题slug>/stage2_scoop/scoop_report.md`（若不在 research-pipeline 流水线中，写到当前工作目录 `scoop_report.md`）。Downstream stages read the file, not the chat.
+- **Persist the report（本整合包契约）.** In addition to displaying it, write the complete final report to `research_run/<课题slug>/stage2_scoop/scoop_report_<idea-slug>.md`（同一课题查多个 idea 时用 idea slug 区分文件名，避免互相覆盖；单 idea 亦可写 `scoop_report.md`。若不在 research-pipeline 流水线中，写到当前工作目录）。Downstream stages read the file, not the chat.
 - **Log every step.** After completing each step, write a markdown file to `research_run/<课题slug>/stage2_scoop/step{step_number}.md` (when running inside the `research-pipeline`; standalone, fall back to `./step{step_number}.md` in the current working directory) containing the step number, step name, timestamp, and the full structured result of that step. This produces one file per step, enabling downstream tooling to inspect intermediate results.
 - **Display the full report.** Provide the complete detailed report — including all search results, analysis, and reasoning — not just a summary.

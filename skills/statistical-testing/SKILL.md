@@ -43,6 +43,13 @@ last_updated: "2026-03-17"
   评测窗口之间高度自相关，不满足独立样本假设，不要把窗口当独立观测灌进 t 检验。
 - **多重比较**：数据集 × horizon × baseline × 指标的全组合检验必须做
   Holm 或 Benjamini-Hochberg FDR 校正，否则只对预先指定的主对比做检验。
+- **实验级比较台账（comparison ledger）**：校正必须覆盖*整个实验中做过的全部检验*，
+  不是每次调用 `correct_pvalues` 时手头恰好有的那几个 p 值。在
+  `research_run/<slug>/stage4_experiments/comparison_ledger.md` 维护一张累计表
+  （比较对象 / 数据集 / horizon / 指标 / 原始 p 值 / 所属比较族），投稿前对每个
+  比较族整体重跑一次校正；表里没登记的检验不得写进论文。
+- **两组独立比较默认 Welch**：不要用"先 Levene 检验再选 equal_var"的两步法
+  （膨胀错误率）；`run_comparison` 已默认 `equal_var=False`。
 
 Choose and execute the right statistical test for your data. This skill covers
 normality checks, parametric and non-parametric tests, effect size computation,
@@ -133,10 +140,21 @@ def test_normality(
         results["shapiro"] = {"statistic": None, "p_value": None, "normal": None,
                               "note": "n>=5000; skipped Shapiro-Wilk"}
 
-    # Kolmogorov-Smirnov against fitted normal
-    mu, sigma = np.mean(data), np.std(data, ddof=1)
-    stat_ks, p_ks = stats.kstest(data, "norm", args=(mu, sigma))
-    results["ks"] = {"statistic": stat_ks, "p_value": p_ks, "normal": p_ks > alpha}
+    # Lilliefors-corrected KS (parameters estimated from the same sample — a plain
+    # stats.kstest with fitted mu/sigma is anti-conservative and must NOT be used)
+    if n >= 4:
+        try:
+            from statsmodels.stats.diagnostic import lilliefors
+            stat_ks, p_ks = lilliefors(data, dist="norm")
+            results["ks"] = {"statistic": stat_ks, "p_value": p_ks, "normal": p_ks > alpha,
+                             "note": "Lilliefors-corrected KS"}
+        except ImportError:
+            results["ks"] = {"statistic": None, "p_value": None, "normal": None,
+                             "note": "statsmodels missing; skipped KS (do not substitute "
+                                     "a plain kstest with fitted parameters)"}
+    else:
+        results["ks"] = {"statistic": None, "p_value": None, "normal": None,
+                         "note": "n<4; skipped KS"}
 
     # D'Agostino-Pearson (needs n >= 20)
     if n >= 20:
@@ -237,6 +255,14 @@ def run_comparison(
     if k < 2:
         raise ValueError("Need at least 2 groups.")
 
+    min_n = min(len(g) for g in groups)
+    if min_n < 5:
+        import warnings
+        warnings.warn(
+            f"smallest group has n={min_n} < 5: p-values are unreliable at this sample "
+            "size \u2014 report mean/std (or range) instead of significance claims "
+            "(pack policy: no p-values at n=3).", stacklevel=2)
+
     # Check normality for each group
     all_normal = all(test_normality(g, alpha=alpha, verbose=False)["is_normal"] for g in groups)
 
@@ -253,15 +279,22 @@ def run_comparison(
             else:
                 stat, p = stats.wilcoxon(g1, g2)
                 result["test_name"] = "Wilcoxon signed-rank"
-                result["effect_size"] = {"rank_biserial": round(1 - (2 * stat) / (len(g1) * (len(g1) + 1)), 4)}
+                # matched-pairs rank-biserial r = (T+ - T-)/(T+ + T-), computed from
+                # the signed ranks directly (robust to scipy's choice of W statistic)
+                diff = g1 - g2
+                diff = diff[diff != 0]
+                ranks = stats.rankdata(np.abs(diff))
+                t_plus = float(ranks[diff > 0].sum())
+                t_minus = float(ranks[diff < 0].sum())
+                rb = (t_plus - t_minus) / (t_plus + t_minus)
+                result["effect_size"] = {"rank_biserial": round(rb, 4)}
         else:
-            # Levene's test for equal variances
-            _, p_levene = stats.levene(g1, g2)
-            equal_var = p_levene > alpha
-
             if all_normal:
-                stat, p = stats.ttest_ind(g1, g2, equal_var=equal_var)
-                result["test_name"] = f"Independent t-test ({'equal' if equal_var else 'Welch'} variance)"
+                # Welch by default — the two-step "Levene pretest then choose
+                # equal_var" procedure inflates error rates and is not robust;
+                # Welch loses almost nothing when variances happen to be equal.
+                stat, p = stats.ttest_ind(g1, g2, equal_var=False)
+                result["test_name"] = "Welch's t-test"
                 d = cohens_d(g1, g2)
                 result["effect_size"] = {"cohens_d": round(d, 4),
                                          "interpretation": interpret_effect_size(d)}
@@ -372,7 +405,13 @@ def power_analysis_ttest(
     n_per_group: Optional[int] = None,
 ) -> Dict[str, float]:
     """
-    Two-sample t-test power analysis.
+    Two-sample t-test power analysis — for **a priori** planning only (choose n
+    before running the experiment, using an effect size from pilot data or the
+    literature). Do NOT compute "achieved/post-hoc power" from the observed effect
+    size of the same experiment: it is a monotone transform of the p-value and adds
+    no information. Note this solver is for *independent* two-sample designs; a
+    paired design has different power characteristics (use
+    statsmodels TTestPower on the difference scores instead).
     Provide any three of (effect_size, alpha, power, n_per_group) to solve for the fourth.
     """
     analysis = TTestIndPower()
@@ -445,13 +484,11 @@ print(correction_df)
 
 ---
 
-## Example 2 — Two-Group Comparison with Power Report
+## Example 2 — Paired Comparison + A-Priori Power Planning
 
 ```python
 import numpy as np
-from statistical_testing import (
-    test_normality, run_comparison, cohens_d, power_analysis_ttest
-)
+from statistical_testing import test_normality, run_comparison, power_analysis_ttest
 
 rng = np.random.default_rng(0)
 
@@ -462,17 +499,14 @@ post = pre + rng.normal(loc=8, scale=10, size=30)   # ~0.5 SD improvement
 diff = post - pre
 norm_result = test_normality(diff)
 
-# Step 2: Run the appropriate test
+# Step 2: Run the appropriate test and report effect size + CI
 result = run_comparison(pre, post, paired=True)
 
-# Step 3: Retrospective power
-d = result["effect_size"].get("cohens_d", cohens_d(pre, post))
-power_report = power_analysis_ttest(effect_size=abs(d), alpha=0.05, n_per_group=30)
-print(f"Achieved power: {power_report['achieved_power']:.2f}")
-
-# Step 4: How many participants for 90% power?
-needed = power_analysis_ttest(effect_size=abs(d), alpha=0.05, power=0.90)
-print(f"N needed for 90% power: {int(needed['required_n_per_group'])}")
+# Step 3 (planning the NEXT experiment): a-priori power using an effect size
+# from pilot data or the literature — never "achieved power" from this sample.
+d_planned = 0.5  # e.g., smallest effect size of interest
+needed = power_analysis_ttest(effect_size=d_planned, alpha=0.05, power=0.90)
+print(f"N needed for 90% power at d={d_planned}: {int(needed['required_n_per_group'])}")
 ```
 
 ---

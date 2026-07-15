@@ -63,7 +63,7 @@ if [ -z "$RENDER_HTML" ]; then
 fi
 [ -z "$RENDER_HTML" ] && {
   echo "ERROR: render_html.py not resolved (layer 0: \$CLAUDE_SKILL_DIR/scripts/; layers 1-3: .aris/skills/render-html/scripts/, skills/render-html/scripts/, \$ARIS_REPO/skills/render-html/scripts/)." >&2
-  echo "       /render-html cannot produce HTML output. Fix: rerun bash tools/install_aris.sh, or copy from \$ARIS_REPO/skills/render-html/scripts/." >&2
+  echo "       /render-html cannot produce HTML output. Fix: run 'bash install.sh' at the pack root, or copy from \$ARIS_REPO/skills/render-html/scripts/." >&2
   exit 1
 }
 ```
