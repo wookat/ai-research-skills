@@ -103,17 +103,17 @@ WIKI_SCRIPT=".aris/tools/research_wiki.py"
   echo "       Fix one of:" >&2
   echo "         1. run 'bash install.sh' at the pack root (writes ~/.aris/repo)" >&2
   echo "         2. export ARIS_REPO=<path-to-pack-root>" >&2
-  echo "         3. cp <pack-root>/tools/research_wiki.py tools/  (if the helper is present)" >&2
+  echo "         3. cp <pack-root>/tools/research_wiki.py tools/" >&2
   exit 1
 }
 ```
 
-> **本整合包适配：**本包 `tools/` 目前**未收录** `research_wiki.py`（上游 ARIS
-> 专有 helper）。解析链未命中时不要因此整个 skill 报废：降级为**直接按本文件
-> 前述目录结构手工读写 `research-wiki/` 下的 markdown 与 `graph/edges.jsonl`**，
-> 并在 wiki 根目录的 `README.md`（或首次创建时新建）记录一行
-> `helper-degraded: manual maintenance`。若用户自备了上游 `research_wiki.py`，
-> 解析链（含 `bash install.sh` 写入的 `~/.aris/repo`）会正常命中并恢复脚本化路径。
+> **本整合包适配：**本包 `tools/research_wiki.py` 已收录（按本文件文档接口的
+> clean-room 实现，非上游 ARIS 私有脚本），在包根执行 `bash install.sh` 写入
+> `~/.aris/repo` 后解析链即可命中。仅当解析链仍未命中（未安装且未设 `ARIS_REPO`）
+> 时才降级为**直接按本文件前述目录结构手工读写 `research-wiki/` 下的 markdown 与
+> `graph/edges.jsonl`**，并在 wiki 根目录的 `README.md`（或首次创建时新建）记录
+> 一行 `helper-degraded: manual maintenance`。
 
 `/research-wiki` itself is the wiki tool — if the helper is missing it
 hard-fails the *scripted* path and falls back to the manual-maintenance

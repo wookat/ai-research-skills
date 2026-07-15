@@ -1,6 +1,6 @@
 ---
 name: paper-illustration
-description: "Generate publication-quality AI illustrations for academic papers using Gemini image generation. Creates architecture diagrams, method illustrations with Claude-supervised iterative refinement loop. Use when user says \"生成图表\", \"画架构图\", \"AI绘图\", \"paper illustration\", \"generate diagram\", or needs visual figures for papers."
+description: "Generate publication-quality AI illustrations for academic papers via pluggable image backends (Gemini / OpenAI gpt-image / any OpenAI-compatible endpoint, with mermaid fallback). Creates architecture diagrams, method illustrations with Claude-supervised iterative refinement loop. Use when user says \"生成图表\", \"画架构图\", \"AI绘图\", \"paper illustration\", \"generate diagram\", or needs visual figures for papers."
 argument-hint: "[description-or-method-file] [— style-ref: <source>]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, mcp__codex__codex, mcp__codex__codex-reply, WebSearch
 ---
@@ -65,17 +65,24 @@ Generate publication-quality illustrations using a **multi-stage workflow** with
 
 ## Constants
 
-- **IMAGE_MODEL = `${IMAGE_MODEL:-gemini-3-pro-image-preview}`** — Paperbanana default for image rendering; override with `IMAGE_MODEL`.
-- **REASONING_MODEL = `${REASONING_MODEL:-gemini-3-pro-preview}`** — default for layout optimization and style checking; override with `REASONING_MODEL`.
+- **IMAGE_BACKEND = `${IMAGE_BACKEND:-gemini}`** — pluggable image backend: `gemini` | `openai` | `openai-compatible`（见下方后端选择）
+- **IMAGE_MODEL = `${IMAGE_MODEL:-gemini-3-pro-image-preview}`** — image rendering model; override with `IMAGE_MODEL`（openai 后端默认 `gpt-image-1`）.
+- **REASONING_MODEL = `${REASONING_MODEL:-gemini-3-pro-preview}`** — default for layout optimization and style checking; override with `REASONING_MODEL`. Layout/style reasoning 不依赖出图后端：无 Gemini key 时直接由当前主 agent（Claude/GPT/…）在对话内完成同样的 layout 优化与 style 核验步骤即可，只有出图渲染必须走外部图像 API。
 - **MAX_ITERATIONS = 5** — Maximum refinement rounds
 - **TARGET_SCORE = 9** — Minimum acceptable score (1-10) — RAISED FOR QUALITY
 - **OUTPUT_DIR = `figures/ai_generated/`** — Output directory
-- **API_KEY_ENV = `GEMINI_API_KEY`** — Environment variable
 
-If no Gemini API key is available, or the platform does not support the configured
-Gemini models, fall back to `mermaid-diagram` / `data-visualization` to generate a
-schematic or vector placeholder. Mark the artifact
-`illustration generated via fallback`.
+### 出图后端选择（按可用凭据自动降级）
+
+| 优先级 | 后端 | 条件 | 默认模型 |
+|---|---|---|---|
+| 1 | `gemini` | `GEMINI_API_KEY` 已设 | `gemini-3-pro-image-preview` |
+| 2 | `openai` | `OPENAI_API_KEY` 已设 | `gpt-image-1`（Images API `/v1/images/generations`） |
+| 3 | `openai-compatible` | `IMAGE_API_BASE` + `IMAGE_API_KEY` 已设（任何 OpenAI Images 兼容端点：Azure OpenAI、自建网关、其他厂商兼容层） | 由 `IMAGE_MODEL` 指定 |
+| 4 | fallback | 以上均无 | `mermaid-diagram` / `data-visualization` 生成示意图/矢量占位图，标注 `illustration generated via fallback` |
+
+用户可用 `IMAGE_BACKEND` 显式指定后端跳过自动探测。所有后端共用同一 prompt
+流水线（Step 1-3 的 plan → layout → style spec 一字不改），只替换 Step 4 的渲染调用。
 
 ## Optional: Style reference (`— style-ref: <source>`, opt-in)
 
@@ -207,13 +214,19 @@ Sources accepted: local TeX dir / file, local PDF, arXiv id, http(s) URL. Overle
 ### Step 0: Pre-flight Check
 
 ```bash
-# Check API key
-if [ -z "$GEMINI_API_KEY" ]; then
-    echo "ERROR: GEMINI_API_KEY not set"
-    echo "Get your key from: https://aistudio.google.com/app/apikey"
-    echo "Set it: export GEMINI_API_KEY='your-key'"
-    exit 1
+# Resolve image backend (see Constants → 出图后端选择)
+IMAGE_BACKEND="${IMAGE_BACKEND:-}"
+if [ -z "$IMAGE_BACKEND" ]; then
+    if   [ -n "$GEMINI_API_KEY" ]; then IMAGE_BACKEND=gemini
+    elif [ -n "$OPENAI_API_KEY" ]; then IMAGE_BACKEND=openai
+    elif [ -n "$IMAGE_API_BASE" ] && [ -n "$IMAGE_API_KEY" ]; then IMAGE_BACKEND=openai-compatible
+    else
+        echo "WARN: no image API credentials (GEMINI_API_KEY / OPENAI_API_KEY / IMAGE_API_BASE+IMAGE_API_KEY)."
+        echo "      Falling back to mermaid-diagram / data-visualization (vector schematic)."
+        IMAGE_BACKEND=fallback
+    fi
 fi
+echo "Image backend: $IMAGE_BACKEND"
 
 # Create output directory
 mkdir -p figures/ai_generated
@@ -460,6 +473,7 @@ set -e
 OUTPUT_DIR="figures/ai_generated"
 mkdir -p "$OUTPUT_DIR"
 
+# ── Backend: gemini（IMAGE_BACKEND=gemini 时执行；openai / openai-compatible 见本步末尾）──
 API_KEY="${GEMINI_API_KEY}"
 URL="https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL:-gemini-3-pro-image-preview}:generateContent?key=$API_KEY"
 
@@ -530,6 +544,55 @@ except Exception as e:
     print(f"Raw response: {str(data)[:500]}")
 PYTHON
 ```
+
+**Backend: openai / openai-compatible**（`IMAGE_BACKEND=openai` 或 `openai-compatible` 时，
+用下面的渲染调用替换上方 Gemini 调用；`$RENDER_PROMPT` 构造方式完全相同）：
+
+```bash
+if [ "$IMAGE_BACKEND" = "openai" ]; then
+    API_BASE="https://api.openai.com/v1"
+    API_KEY="$OPENAI_API_KEY"
+    MODEL="${IMAGE_MODEL:-gpt-image-1}"
+else  # openai-compatible: Azure OpenAI / 自建网关 / 其他兼容端点
+    API_BASE="${IMAGE_API_BASE%/}"
+    API_KEY="$IMAGE_API_KEY"
+    MODEL="${IMAGE_MODEL:?set IMAGE_MODEL for openai-compatible backend}"
+fi
+
+MODEL="$MODEL" python3 - "$RENDER_PROMPT" > /tmp/image_request.json << 'PYTHON'
+import json, sys, os
+json.dump({"model": os.environ.get("MODEL", "gpt-image-1"),
+           "prompt": sys.argv[1], "size": "1536x1024", "n": 1},
+          sys.stdout)
+PYTHON
+
+RESPONSE=$(curl -s --max-time 300 \
+  -X POST "$API_BASE/images/generations" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d @/tmp/image_request.json)
+
+if echo "$RESPONSE" | grep -q '"error"'; then
+    echo "API Error:"; echo "$RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE"
+    exit 1
+fi
+
+# Extract image (b64_json or url)
+echo "$RESPONSE" | python3 << 'PYTHON'
+import sys, json, base64, urllib.request
+from pathlib import Path
+data = json.load(sys.stdin)
+item = data["data"][0]
+img_path = Path("figures/ai_generated") / "figure_v1.png"  # increment per iteration
+if item.get("b64_json"):
+    img_path.write_bytes(base64.b64decode(item["b64_json"]))
+else:
+    urllib.request.urlretrieve(item["url"], img_path)
+print(f"Image saved: {img_path}")
+PYTHON
+```
+
+后续 Step 5 的严格视觉评审、打分与迭代循环对所有后端一致。
 
 ### Step 5: Claude STRICT Visual Review & Scoring (MANDATORY)
 
