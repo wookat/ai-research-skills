@@ -1,0 +1,47 @@
+/* solid.css — the ORIGINAL 'solid' style layer (extracted verbatim).
+   Filled section cards on warm --bg, a thin tinted border, and a top
+   accent stripe (::before); h2 is an accent underline. Injected at the
+   STYLE_CSS hook by compose_poster.py. */
+:root { --fig-img-radius: 4px; --tb-chip-shadow: none; }
+  .section {
+    position: relative;
+    /* Was: solid white. Now: warm off-white from --bg so the card sits on a
+       background that already differs from the surrounding page. Combined with
+       the top accent stripe below, this drops the "wall of white cards" look
+       without breaking layout dimensions (CSS-only, no markup change). */
+    background: var(--bg);
+    /* Border picks up a faint tint of the section accent — sections feel
+       themed without screaming. */
+    border: 1px solid color-mix(in srgb, var(--section-accent, var(--accent)) 18%, #d8d8d4);
+    border-radius: 6px;
+    padding: 32pt;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    /* Top edge gets a thin accent stripe via overflow-hidden + ::before. The
+       stripe lives INSIDE the border-box (the rounded corners clip it) so it
+       doesn't affect layout dimensions — fill loop measurements still match
+       what check_poster.py reports. */
+    overflow: hidden;
+  }
+  .section::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    /* Slight gradient to add depth. */
+    background: linear-gradient(90deg,
+      var(--section-accent, var(--accent)),
+      color-mix(in srgb, var(--section-accent, var(--accent)) 70%, white));
+    pointer-events: none;
+  }
+  .section h2 {
+    margin: 0 0 0.45em 0;
+    font-size: 60pt;
+    line-height: 1.1;
+    font-weight: 800;
+    color: var(--accent);
+    border-bottom: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    padding-bottom: 0.25em;
+  }

@@ -1,0 +1,33 @@
+<style>
+  /* Scan-to-Read variant: HERO — one large, centered QR with a caption beneath. For a
+     single-link paper (group "single") the big code + caption fill the section so it never
+     reads as a lonely QR in empty space. Shared invariants (CSS-background QR, auto-hide,
+     v5 mutual-exclusion) repeated in every variant so each partial is self-contained. */
+  .section[data-section="scan-to-read"] h2 { position: static !important; transform: none !important; background: none !important; max-width: none !important; display: block; margin: 0; padding: 0; }
+  .section[data-section="scan-to-read"] .qr-img { background-color: #fff; background-size: contain; background-repeat: no-repeat; background-position: center; background-origin: content-box; padding: 8pt; border: 1px solid #e5e5e0; border-radius: 9pt; image-rendering: pixelated; aspect-ratio: 1 / 1; }
+  .section[data-section="scan-to-read"] .tq[data-qr=""],
+  .section[data-section="scan-to-read"] .tq[data-qr*="{{"] { display: none !important; }
+  .section[data-section="scan-to-read"]:not(:has(.tq:not([data-qr=""]):not([data-qr*="{{"]))) { display: none; }
+  body:has(.titlebar img.qr-img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"],
+  body:has(.titlebar .qr-tile .chip.qr img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"] { display: none; }
+  /* hero layout */
+  .section[data-section="scan-to-read"] .scan-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 auto; min-height: 0; gap: 14pt; text-align: center; }
+  .section[data-section="scan-to-read"] .scan-hero .tq { flex: 0 1 auto; min-height: 0; display: flex; }
+  .section[data-section="scan-to-read"] .scan-hero .qr-img { height: 300pt; max-height: 100%; width: auto; }
+  .section[data-section="scan-to-read"] .scan-hero h2 { font-size: 38pt; line-height: 1.1; color: var(--accent); }
+  .section[data-section="scan-to-read"] .scan-hero .scan-url { font-size: 24pt; color: var(--muted); word-break: break-all; }
+  .section[data-section="scan-to-read"] .scan-hero .scan-url[data-url=""],
+  .section[data-section="scan-to-read"] .scan-hero .scan-url[data-url*="{{"] { display: none; }
+
+  /* --- shared scan polish (posterskill-inspired: QR card depth + accent caption pill) --- */
+  .section[data-section="scan-to-read"] .qr-img { border-radius: 13pt !important; box-shadow: 0 4pt 16pt rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.06); padding: 10pt !important; }
+  .section[data-section="scan-to-read"] .tq { gap: 12pt !important; }
+  .section[data-section="scan-to-read"] .tq span { background: var(--accent-soft); color: var(--accent) !important; font-weight: 800 !important; padding: 4pt 17pt; border-radius: 999pt; letter-spacing: 0.02em; }
+</style>
+<div class="section" data-section="scan-to-read">
+  <div class="scan-qr scan-hero">
+    <div class="tq" data-qr="{{QR_PAPER}}"><div class="qr-img" style="background-image:url('{{QR_PAPER}}')"></div></div>
+    <h2>Scan to read the full paper</h2>
+    <div class="scan-url" data-url="{{URL_PAPER}}">{{URL_PAPER}}</div>
+  </div>
+</div>

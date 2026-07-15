@@ -1,0 +1,69 @@
+{
+  "schema_version": "paper2reel_contract.v1",
+  "viewer_version": "section_modal.v2",
+  "template_version": "attention_golden_section_modal.v1",
+  "required_html_markers": {
+    "poster iframe": "id=\"posterFrame\"",
+    "hidden topbar": "class=\"topbar\"",
+    "reel wordmark": "class=\"brand-mark\"",
+    "section rail": "id=\"sectionRail\"",
+    "download links": "id=\"downloadLinks\"",
+    "top help button": "id=\"helpTopBtn\"",
+    "download icon": "class=\"download-icon\"",
+    "download link style": "class=\"download-link\"",
+    "download separators": "class=\"download-sep\"",
+    "section rail tab min width": "min-width:68px",
+    "section rail tab index": "className = 'section-index'",
+    "section rail active underline": ".section-rail button.active::after",
+    "help overlay": "id=\"helpOverlay\"",
+    "modal overlay": "id=\"overlay\"",
+    "modal body": "class=\"modal-body\"",
+    "section video": "id=\"sectionVideo\"",
+    "caption toggle": "id=\"captionToggle\"",
+    "sound button": "id=\"playSoundBtn\"",
+    "slide thumbnails": "id=\"thumbRow\"",
+    "draggable splitter": "id=\"splitter\"",
+    "language toggle EN": "id=\"langEn\"",
+    "language toggle CN": "id=\"langCn\"",
+    "debug opacity slider": "id=\"paperReelOpacity\"",
+    "double-click tooltip": "Double Click to Open",
+    "local-open poster embed": "const POSTER_HTML =",
+    "local-open runtime switch": "shouldUseLocalOpenRuntime",
+    "template version marker": "attention_golden_section_modal.v1"
+  },
+  "forbidden_html_markers": {
+    "old poster tab": "id=\"posterTab\"",
+    "old slides tab": "id=\"slidesTab\"",
+    "old video tab": "id=\"videoTab\"",
+    "old blog tab": "id=\"blogTab\"",
+    "old tab strip": "class=\"mode-tabs\""
+  },
+  "required_shortcuts": ["a", "s", "d", "v", "h"],
+  "required_download_labels": ["All", "Poster", "Video", "Blog"],
+  "required_poster_debug_markers": [
+    "window.__togglePosterDebug",
+    "body.debug",
+    "dbg-bbox"
+  ],
+  "required_output_paths": [
+    "reel.html",
+    "content_alignment.json",
+    "manifest.json",
+    "assets/poster/poster.html",
+    "assets/media/video.mp4",
+    "assets/ui/reel-wordmark.png",
+    "assets/slides",
+    "assets/blog/figures",
+    "assets/downloads/all_final.zip",
+    "assets/downloads/poster_final.zip",
+    "assets/downloads/video_final.zip",
+    "assets/downloads/blog_final.zip"
+  ],
+  "required_media_subdirs": [
+    "assets/media/clips",
+    "assets/media/captions",
+    "assets/media/slide_clips"
+  ],
+  "min_blog_text_chars": 80,
+  "min_download_buttons": 4
+}

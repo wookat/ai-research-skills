@@ -1,0 +1,87 @@
+<!-- pv5 — minimal masthead: big centered title + a centered logos/QR row; NO venue block -->
+<style>
+  .titlebar.pv5 {
+    grid-template-columns: 1fr;
+    grid-template-areas: "tt" "rz";
+    justify-items: center;
+    align-items: center;
+    text-align: center;
+    gap: 20pt;
+  }
+  /* minimal: drop the venue badge entirely (title + logos only) */
+  .titlebar.pv5 .venue-badge { display: none; }
+  .titlebar.pv5 .title-block { grid-area: tt; text-align: center; }
+  .titlebar.pv5 .right-zone { grid-area: rz; flex-direction: row; align-items: center; gap: 26pt; }
+  .titlebar.pv5 .logo-block { flex-direction: row; }
+  .titlebar.pv5 .logo-block .logo { height: 92pt; }
+</style>
+<header class="titlebar pv5" data-section="title" data-header="pv5">>
+    <!-- LEFT zone: venue badge. Replace placeholders with e.g. `ICML` / `2025` / `POSTER`.
+         Render-time hint: split {{VENUE}} like "ICML 2025" into vb-venue="ICML" + vb-year="2025";
+         vb-tag is optional ("POSTER", "ORAL", "SPOTLIGHT"). Empty children auto-hide.
+         {{VENUE_LINK}} is the badge's target URL — priority: code_url → paper_url
+         (arxiv.org/pdf/<id> if arxiv_id present) → web-searched paper landing page by title.
+         If none resolves, leave the href empty; the `.vb-link[href=""]` CSS rule above
+         disables the click affordance so the badge still renders as static text. -->
+    <div class="venue-badge">
+      <a class="vb-link" href="{{VENUE_LINK}}" target="_blank" rel="noopener">
+        <div class="vb-venue">{{VENUE_NAME}}</div>
+        <div class="vb-year">{{VENUE_YEAR}}</div>
+        <div class="vb-tag">{{VENUE_TAG}}</div>
+      </a>
+    </div>
+
+    <!-- CENTER zone: title + authors + optional contact.
+         {{AUTHOR_LEGEND}} renders ONLY the numbered institutes line
+         (e.g. "<sup>1</sup> Microsoft Research Asia  <sup>2</sup> UCSD").
+         NEVER render a corresponding-author / equal-contribution legend here
+         (no "* Equal contribution", no "† Corresponding author", no symbol
+         glossary in any form). The author-line superscripts stand on their
+         own; the corresponding author's email is surfaced by {{CONTACT}}. -->
+    <div class="title-block">
+      <h1>{{TITLE}}</h1>
+      <div class="authors">{{AUTHORS}}</div>
+      <div class="author-legend">{{AUTHOR_LEGEND}}</div>
+      <div class="contact">{{CONTACT}}</div>
+    </div>
+
+    <!-- RIGHT zone wrapper: institute logos on top, paper / code QR tiles below.
+         Both children auto-hide when empty so the titlebar re-centers naturally.
+         Logos source: `<outdir>/logos/<slug>.{png,svg}` written by
+         `scripts/fetch_logos.py`. QR source: `<outdir>/qr/{paper,code}.png`
+         written by `scripts/make_qr.py` (paper QR from metadata.json paper_url
+         or arxiv_id fallback; code QR from metadata.json code_url). -->
+    <div class="right-zone">
+      <!-- Top row: institute logos. One <img class="logo"> per institute (1–4 typical).
+           If a logo could not be found for an institute, OMIT that <img> entirely
+           (don't leave a placeholder src). The `.logo-block:has(no logos)` rule hides
+           the whole row when nothing resolves. Order matches the spec's Institutes line. -->
+      <div class="logo-block">
+        <img class="logo" src="{{LOGO_1}}" alt="" onerror="this.remove()">
+        <img class="logo" src="{{LOGO_2}}" alt="" onerror="this.remove()">
+        <img class="logo" src="{{LOGO_3}}" alt="" onerror="this.remove()">
+        <img class="logo" src="{{LOGO_4}}" alt="" onerror="this.remove()">
+      </div>
+      <!-- Bottom row: paper + code QR tiles. Each `src` is a local path under
+           `<outdir>/qr/<kind>.png` written by `scripts/make_qr.py`. A tile auto-hides
+           when its {{QR_*}} placeholder didn't substitute (no URL in metadata), and
+           the whole .qr-block auto-hides if neither tile is visible. -->
+      <div class="qr-block">
+        <figure class="qr">
+          <img class="qr-img" src="{{QR_PAPER}}" alt="Paper QR" onerror="this.parentElement.remove()">
+          <figcaption class="qr-label">Paper</figcaption>
+        </figure>
+        <figure class="qr">
+          <img class="qr-img" src="{{QR_CODE}}" alt="Code QR" onerror="this.parentElement.remove()">
+          <figcaption class="qr-label">Code</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <!-- Narration controls nested in the titlebar but absolutely positioned to its
+         corners: Full Listen bottom-LEFT, the small "Listen" pill (the opening-narration
+         twin of every section's Listen pill, sized to match) TOP-RIGHT. Inside the title
+         region visually, out of normal flow so show/hide and label swaps can't reflow
+         the title text. -->
+    <button class="listen-all" data-listen-all>Full Listen</button>
+  </header>

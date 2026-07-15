@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<style>
+  :root{ --accent:#2f5597; }
+  *{box-sizing:border-box}
+  body{margin:0;background:#e9edf2;font-family:Arial,Helvetica,sans-serif;padding:30px 26px;width:1560px}
+  .lbl{font:700 16px Arial;color:#33415c;margin:22px 2px 9px;letter-spacing:.03em}
+  .lbl b{color:var(--accent)} .lbl span{font-weight:400;color:#6b7688;font-size:13.5px}
+
+  .titlebar{ background:var(--accent); color:#fff; border-radius:9px; padding:14px 20px; box-shadow:0 3px 12px #0003; }
+  .title-block{ text-align:center; min-width:0; }
+  .title-block h1{ margin:0 0 7px; font-size:31px; line-height:1.12; font-weight:800; }
+  .title-block .authors{ font-size:16.5px; opacity:.96; line-height:1.32; }
+  .title-block .authors sup{ font-size:.68em; opacity:.85; }
+  .title-block .legend{ font-size:12.5px; opacity:.8; margin-top:6px; }
+
+  .chip{ background:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px #0003; }
+
+  /* conference mark — PROMINENT (one venue, so it dominates) */
+  .venue-mark{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; }
+  .venue-mark .chip{ flex:1 1 auto; min-height:0; padding:6px 12px; }
+  .venue-mark .chip img{ max-height:100%; width:auto; max-width:250px; object-fit:contain; display:block; }
+  .venue-mark .vtext{ flex:0 0 auto; font-size:14.5px; font-weight:800; letter-spacing:.05em; opacity:.96; }
+
+  /* institution logos — bigger (controlled) so 2 rows ≈ the equal box height; NOT stretched (square seals blow up) */
+  .logo-grid{ display:flex; flex-wrap:wrap; justify-content:space-evenly; align-content:center; gap:8px 12px; width:100%; }
+  .logo-grid .chip{ height:60px; padding:5px 9px; }
+  .logo-grid .chip img{ height:52px; width:auto; max-width:150px; object-fit:contain; display:block; }
+
+  /* layouts: 3 pseudo-sections — side zones get a real width slice; logos fill them; title in the middle */
+  .hv-1, .hv-2{ display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,3fr) minmax(0,1.4fr); align-items:stretch; gap:14px; }
+
+  /* Variant 3 — title centered full-width, single EQUAL-HEIGHT logo strip below */
+  .hv-3{ display:block; text-align:center; }
+  .hv-3 .strip{ display:flex; align-items:center; justify-content:center; gap:12px; margin-top:14px; }
+  .hv-3 .strip .chip{ height:50px; padding:5px 9px; }
+  .hv-3 .strip .chip img{ height:34px; width:auto; max-width:150px; object-fit:contain; display:block; }
+  .hv-3 .strip .chip.conf img{ height:46px; max-width:210px; }   /* conf bigger in the strip too */
+  .hv-3 .strip .divider{ width:1px; height:42px; background:#ffffff66; margin:0 2px; }
+</style></head><body>
+
+<div class="lbl"><b>Variant 1</b> — 会议 logo 左 · 标题居中 · 机构 logo 右 <span>(3 个 pseudo-section;两侧等宽对称;机构等高 3×2 固定格;会议放大)</span></div>
+<div class="titlebar hv-1">
+  <div class="venue-mark" data-section="venue-logo">
+    <div class="chip"><img src="assets/logos/_venue.png" alt="ICML"></div>
+    <div class="vtext">ICML 2023</div>
+  </div>
+  <div class="title-block" data-section="title">
+    <h1>DS-1000: A Natural and Reliable Benchmark for Data Science Code Generation</h1>
+    <div class="authors">Yuhang Lai<sup>1</sup>, Chengxi Li<sup>2</sup>, Yiming Wang<sup>3</sup>, Tianyi Zhang<sup>4</sup>, Ruiqi Zhong<sup>4</sup>, Luke Zettlemoyer<sup>5,6</sup>, Scott Wen-tau Yih<sup>6</sup>, Daniel Fried<sup>7</sup>, Sida Wang<sup>6</sup>, Tao Yu<sup>1</sup></div>
+    <div class="legend"><sup>1</sup>HKU <sup>2</sup>Peking U <sup>3</sup>Stanford <sup>4</sup>UC Berkeley <sup>5</sup>U Washington <sup>6</sup>Meta AI <sup>7</sup>CMU</div>
+  </div>
+  <div class="logo-grid" data-section="inst-logos">
+    <span class="chip"><img src="assets/logos/the-university-of-hong-kong.svg"></span>
+    <span class="chip"><img src="assets/logos/peking-university.svg"></span>
+    <span class="chip"><img src="assets/logos/stanford-university.svg"></span>
+    <span class="chip"><img src="assets/logos/university-of-california-berkeley.svg"></span>
+    <span class="chip"><img src="assets/logos/university-of-washington.svg"></span>
+    <span class="chip"><img src="assets/logos/meta-platforms.svg"></span>
+  </div>
+</div>
+
+<div class="lbl"><b>Variant 2</b> — 机构 logo 左 · 标题居中 · 会议 logo 右 <span>(镜像)</span></div>
+<div class="titlebar hv-2">
+  <div class="logo-grid" data-section="inst-logos">
+    <span class="chip"><img src="assets/logos/the-university-of-hong-kong.svg"></span>
+    <span class="chip"><img src="assets/logos/peking-university.svg"></span>
+    <span class="chip"><img src="assets/logos/stanford-university.svg"></span>
+    <span class="chip"><img src="assets/logos/university-of-california-berkeley.svg"></span>
+    <span class="chip"><img src="assets/logos/university-of-washington.svg"></span>
+    <span class="chip"><img src="assets/logos/meta-platforms.svg"></span>
+  </div>
+  <div class="title-block" data-section="title">
+    <h1>DS-1000: A Natural and Reliable Benchmark for Data Science Code Generation</h1>
+    <div class="authors">Yuhang Lai<sup>1</sup>, Chengxi Li<sup>2</sup>, Yiming Wang<sup>3</sup>, Tianyi Zhang<sup>4</sup>, Ruiqi Zhong<sup>4</sup>, Luke Zettlemoyer<sup>5,6</sup>, Scott Wen-tau Yih<sup>6</sup>, Daniel Fried<sup>7</sup>, Sida Wang<sup>6</sup>, Tao Yu<sup>1</sup></div>
+    <div class="legend"><sup>1</sup>HKU <sup>2</sup>Peking U <sup>3</sup>Stanford <sup>4</sup>UC Berkeley <sup>5</sup>U Washington <sup>6</sup>Meta AI <sup>7</sup>CMU</div>
+  </div>
+  <div class="venue-mark" data-section="venue-logo">
+    <div class="chip"><img src="assets/logos/_venue.png" alt="ICML"></div>
+    <div class="vtext">ICML 2023</div>
+  </div>
+</div>
+
+<div class="lbl"><b>Variant 3</b> — 标题通栏居中 · 下方一条等高 logo strip <span>(你最早喜欢的等高版;宽 logo 打散;会议略大)</span></div>
+<div class="titlebar hv-3">
+  <div class="title-block" data-section="title">
+    <h1>DS-1000: A Natural and Reliable Benchmark for Data Science Code Generation</h1>
+    <div class="authors">Yuhang Lai<sup>1</sup>, Chengxi Li<sup>2</sup>, Yiming Wang<sup>3</sup>, Tianyi Zhang<sup>4</sup>, Ruiqi Zhong<sup>4</sup>, Luke Zettlemoyer<sup>5,6</sup>, Scott Wen-tau Yih<sup>6</sup>, Daniel Fried<sup>7</sup>, Sida Wang<sup>6</sup>, Tao Yu<sup>1</sup></div>
+    <div class="legend"><sup>1</sup>HKU <sup>2</sup>Peking U <sup>3</sup>Stanford <sup>4</sup>UC Berkeley <sup>5</sup>U Washington <sup>6</sup>Meta AI <sup>7</sup>CMU</div>
+  </div>
+  <div class="strip" data-section="logos">
+    <span class="chip conf"><img src="assets/logos/_venue.png" alt="ICML"></span>
+    <span class="divider"></span>
+    <span class="chip"><img src="assets/logos/peking-university.svg"></span>
+    <span class="chip"><img src="assets/logos/stanford-university.svg"></span>
+    <span class="chip"><img src="assets/logos/university-of-california-berkeley.svg"></span>
+    <span class="chip"><img src="assets/logos/university-of-washington.svg"></span>
+    <span class="chip"><img src="assets/logos/the-university-of-hong-kong.svg"></span>
+    <span class="chip"><img src="assets/logos/meta-platforms.svg"></span>
+  </div>
+</div>
+
+</body></html>

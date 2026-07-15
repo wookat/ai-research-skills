@@ -1,0 +1,18 @@
+<!-- KaTeX for inline equations (thinner glyphs than MathJax; matches the
+     posterskill look). The jsdelivr CDN URLs below are intercepted by the
+     paper2poster renderer (scripts/utils/render.py + html2pptx) and fulfilled
+     from the skill's bundled assets/katex/ mirror, so equations render
+     deterministically offline (no CORS). CDN kept as transparent fallback when
+     the page is opened outside the renderer with network access. The source TeX
+     survives in each .katex's <annotation encoding="application/x-tex">, which
+     html2pptx reads to rasterize/emit the equation (engine-agnostic math pass). -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<style>
+  /* headline-hero math sizing — KaTeX equivalents of the MathJax mjx-container rules */
+  .headline-hero .katex { max-width: 100% !important; }
+  .headline-hero .katex-display { max-width: 100% !important; }
+  .headline-hero .hero-val .katex { font-size: 46% !important; }
+</style>

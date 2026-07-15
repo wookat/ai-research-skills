@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paper2Blog"
+  short_description: "Turn research papers into bilingual Chinese/English DOCX drafts"
+  default_prompt: "Use $paper2blog to create blog_zh.docx and blog_en.docx from this paper and its figures."

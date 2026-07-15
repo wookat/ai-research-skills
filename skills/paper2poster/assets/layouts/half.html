@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{TITLE}}</title>
+
+{{MATH_HEAD}}
+
+<style>
+  /* Print canvas locked to ICML/NeurIPS standard 60×36 in landscape (5:3).
+     `render_poster.py` reads this @page rule to size the exported PDF;
+     the on-screen .poster element below uses aspect-ratio: 5/3 so the
+     letterboxed browser view matches the printed page exactly. */
+  /* Inter webfont — bundled with the skill assets and copied into the
+     poster outdir by render_poster.py so the HTML is self-contained.
+     Single source of truth so the rendered PDF, the HTML preview, and
+     the converted .pptx all show the same glyphs (html2pptx embeds the
+     same .ttf into the .pptx so reviewers don't need Inter installed).
+     Four weights — Regular 400 / SemiBold 600 / Bold 700 / ExtraBold 800
+     cover body, h2/strong, and h1 with no synthetic-bold fallback. */
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 400; font-display: block;
+    src: url('assets/fonts/Inter-Regular.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 600; font-display: block;
+    src: url('assets/fonts/Inter-SemiBold.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 700; font-display: block;
+    src: url('assets/fonts/Inter-Bold.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 800; font-display: block;
+    src: url('assets/fonts/Inter-ExtraBold.woff2') format('woff2');
+  }
+
+  @page { size: 60in 36in; margin: 0; }
+  :root {
+    --accent: #1d3a87;
+    --accent-soft: #e8edf7;
+    /* LIGHT default header (user default): a pale tint of the theme hue instead of
+       the deep saturated band, a dark same-hue title, and NO white chip behind the
+       logos. framed/simple still override these with their own --tb-*. The deep
+       --accent now survives only as h2/title text + thin rules — the dominant deep
+       colour band (blue/red/green) is hidden. */
+    --tb-bg: var(--accent-soft);
+    --tb-fg: #1b2331;
+    --tb-title-fg: var(--accent);
+    --tb-conf-fg: var(--accent);
+    --tb-sub-fg: #55617a;
+    --tb-divider: rgba(20, 30, 50, 0.16);
+    --tb-chip-bg: transparent;
+    --tb-chip-shadow: none;
+    --callout: #ae2622;
+    /* Highlight ring for the section currently being narrated (audio playback).
+       Defaults to the red callout, but a JS hook at the end of <body> overrides it
+       to CONTRAST the VI theme accent — blue VI (#1d3a87) -> red ring, red VI
+       (#ae2622) -> blue ring — so the "now playing" cue never blends into a
+       same-hue poster frame and stays legible on either theme. */
+    --play-highlight: var(--callout);
+    --play-highlight-red: #ae2622;
+    --play-highlight-blue: #1d3a87;
+    --text: #1c1c1c;
+    --muted: #555;
+    --bg: #fafaf7;
+    --border: 4px solid var(--accent);
+    /* Single highlight color used by inline emphasis (<strong>, .hi, .num) across
+       ALL sections. A strong near-black (#111) so highlighted words read
+       as one consistent "look-here" signal everywhere on the poster. The per-section
+       accent still differentiates the Listen button. */
+    --highlight-accent: #111111;
+    --highlight-soft: #ececec;
+    /* OS-builtin font stack — split into Latin and CJK so the browser's
+       per-glyph font fallback dispatches automatically (English chars hit
+       the latin stack first; Chinese chars miss it and fall through to
+       the cjk stack). Both halves picked so the rendered PDF / PPT needs
+       ZERO font installation on any reviewer's machine.
+
+       --font-latin policy: default ARIAL — cross-platform-safe, pre-installed on
+       Mac + Windows PowerPoint, so the exported .pptx needs ZERO font embedding.
+       Override by editing --font-latin below to any PPT-safe family:
+         Arial (default) · Calibri · Aptos · Cambria · "Times New Roman" ·
+         Verdana · Georgia · "Trebuchet MS"
+       To use INTER instead (bundled webfont, more editorial): set --font-latin to
+         Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, Arial
+       AND run html2pptx's Inter embed (font_embedder.py) so the .pptx ships the
+       font. The 4 Inter @font-face blocks above stay defined but inert (browsers
+       lazy-load — an unused @font-face is never fetched), so the Inter override is
+       a one-line flip.
+
+       --font-cjk is fixed at Microsoft YaHei primary:
+         - "Microsoft YaHei"  → Windows default CJK sans
+         - "PingFang SC"                  → Mac default CJK sans
+         - "Noto Sans CJK SC"             → Linux fallback (also widely available on Mac)
+         If a poster has zero Chinese chars, --font-cjk is never consulted.
+
+       Monospace stays as ui-monospace below — same OS-builtin rule. */
+    --font-latin: Arial, "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-cjk: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC";
+    --font-sans: var(--font-latin), var(--font-cjk), sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+  }
+  /* The poster's true physical canvas is 60in × 36in (`@page { size: 60in 36in }`
+     above keeps PDF export aligned). On screen we FIT it to the browser window
+     instead of showing it at literal CSS-inch size: `width: min(100vw, calc(100vh
+     * 5 / 3))` makes the poster as wide as the window allows while never letting
+     its 5:3 height exceed the window height — so the whole poster is visible with
+     no scrolling, in BOTH normal and fullscreen view. Because every font/padding/
+     gap inside is a `cqw`/`cqh` unit resolving against the poster's own box,
+     scaling the box re-scales the whole layout proportionally — still 1:1 with the
+     printed PDF. Under print emulation the viewport IS the canvas (60×36in at
+     96ppi), so `min(100vw, …)` resolves to exactly 60in and the exported PDF/PNG
+     are byte-for-byte unchanged. */
+  .poster {
+    /* Fixed physical canvas: 60x36in at 96ppi = 5760x3456px. The poster
+       always lays out at this true size; the #poster-stage controller at the
+       end of <body> scales the WHOLE element -- box AND content together --
+       with one transform so it fits any window (normal or fullscreen) while
+       staying pixel-identical to the printed PDF. Under print emulation the
+       viewport IS 5760x3456, so the computed scale is exactly 1 (identity)
+       and the PDF/PNG export is byte-for-byte unchanged. */
+    width: 5760px;
+    height: 3456px;
+    overflow: hidden;
+    border: var(--border);
+    /* container-type: size makes every `cqw` unit below resolve against the poster's
+       OWN width, not the viewport. Without this, `vw`-based clamps hit their max
+       ceiling at wildly different fractions of the canvas in the browser preview
+       (~1900px viewport → clamp at max) vs the print render (5760px viewport →
+       clamp ceiling is 3× too small relative to the poster) — same HTML, two
+       different-looking layouts. With cqw, fonts/paddings/gaps scale linearly
+       with the poster element regardless of viewport. */
+    container-type: size;
+    padding: 52pt;
+    display: flex;
+    flex-direction: column;
+    gap: 44pt;
+    font-size: 44pt;
+    line-height: 1.45;
+  }
+  /* #poster-stage wraps .poster and reserves its SCALED footprint so the page
+     centers with no scrollbars. The controller IIFE at the end of <body> sets
+     this element's width/height to (scale x canvas) and applies the matching
+     `transform: scale()` to .poster, so the box AND its content scale together
+     to fit the window — in both normal and fullscreen view. On screen the
+     footprint equals the old `min(100vw, calc(100vh * 5/3))` box exactly; the
+     only change is that the content now rides along. Under print emulation the
+     viewport IS the 5760x3456 canvas, so scale resolves to 1 and the rendered
+     PDF/PNG are byte-for-byte unchanged. */
+  #poster-stage {
+    position: relative;
+    width: 5760px;
+    height: 3456px;
+    margin: 0 auto;
+  }
+  .poster {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+  }
+  /* ---- Header (titlebar) ----
+     The titlebar's HTML + CSS are now a swappable HEADER partial
+     (assets/headers/<v>.html), injected at the HEADER hook in <body>
+     by references/compose_poster.py. The partial ships its own <style>, so
+     the old `.titlebar*` rules that lived here have moved out. The shared
+     `.titlebar.playing` narration ring stays below with the section rules. */
+
+  /* Columns row stretches to fill remaining height. Tune column ratios per content volume. */
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr 1.25fr 1fr;
+    gap: 36pt;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 28pt;
+    min-height: 0;
+  }
+  /* Sections share vertical space inside their column. The class `.section.grow` absorbs leftover space. */
+  /* Each section is a positioning context so the per-section Listen button can float
+     absolutely inside it, anchored to the top-right corner. Floating the button takes
+     it out of the heading's flex row entirely — no width is reserved for it, so the
+     heading text spans the full section width whether the button is shown, hidden, or
+     toggling between idle ("▶ Listen") and playing ("■ Listen") states. Without this,
+     even small width changes (e.g. the symbol/colour swap on play) could nudge the
+     heading text and ripple subtle reflow through the column. */
+  /* Each section is a positioning context so the per-section Listen button can float
+     absolutely inside it, anchored to the top-right corner. Floating the button takes
+     it out of the heading's flex row entirely — no width is reserved for it, so the
+     heading text spans the full section width whether the button is shown, hidden, or
+     toggling between idle ("▶ Listen") and playing ("■ Listen") states. Without this,
+     even small width changes (e.g. the symbol/colour swap on play) could nudge the
+     heading text and ripple subtle reflow through the column. */
+  /* STYLE_CSS hook = the swappable STYLE layer (assets/styles/<style>.css):
+     :root theme vars + .section / .section::before / .section h2 visual
+     treatment. Injected by compose_poster.py. The structural section rules
+     (takeaway callout, .grow, .playing) stay below as shared base CSS. */
+  {{STYLE_CSS}}
+  /* Takeaway is the poster's mic-drop. Treat it as a callout box: stronger
+     tinted background + thicker left accent border, like a pull-quote in
+     editorial design. Doesn't change card dimensions — bg color and a 6 px
+     left border live inside the existing padding box. */
+  .section[data-section="takeaway"] {
+    background: color-mix(in srgb, var(--accent-soft) 70%, var(--bg));
+    border-left: 6px solid var(--accent);
+  }
+  /* Per-section color binding removed — all sections now share the theme accent for
+     borders, headings, inline emphasis, and Listen buttons. */
+  .section.grow { flex: 1 1 auto; }
+  /* When this section's narration is playing, lift its border so the eye knows where to look.
+     Use `outline` (not border-width) so the highlight doesn't reflow the section's content
+     — a thicker border would steal 1.5px per side from the inner box and push text into
+     extra lines mid-playback. Outlines paint outside the box and leave layout untouched. */
+  .section.playing {
+    border-color: var(--play-highlight);
+    outline: 2px solid var(--play-highlight);
+    outline-offset: 0px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--play-highlight) 15%, transparent);
+    transition: border-color 0.2s, box-shadow 0.2s, outline-color 0.2s;
+  }
+  /* Title narration playing — ring the whole titlebar like a section. Inset
+     (negative offset + inset glow) so the ring stays inside the poster's top
+     edge instead of being clipped. Titlebar carries data-section="title". */
+  .titlebar.playing {
+    outline: 3px solid var(--play-highlight);
+    outline-offset: -3px;
+    box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--play-highlight) 18%, transparent);
+    transition: outline-color 0.2s, box-shadow 0.2s;
+  }
+  .section p { margin: 0 0 0.5em 0; }
+  .section ul { margin: 0; padding-left: 1.1em; }
+  .section li { margin-bottom: 0.35em; }
+  /* Inline emphasis vocabulary — three tools to guide the reader's eye through dense prose.
+     All three share ONE highlight color (--highlight-accent / --highlight-soft, locked to
+     (--highlight-accent / --highlight-soft, near-black #111) so highlighted words read as one consistent "look-here" signal across
+     the whole poster, not eight different per-section colors that fragment the reader's
+     attention. The section's own --section-accent is still used for chrome (Listen button),
+     but deliberately NOT for inline emphasis. Use sparingly: 1-3 hits per section max. */
+  .section strong, .section b { color: var(--highlight-accent); font-weight: 700; }
+  .section .hi {
+    background: var(--highlight-soft);
+    color: var(--highlight-accent);
+    padding: 0.05em 0.35em;
+    border-radius: 4px;
+    font-weight: 600;
+    /* Box-decoration-break keeps the tint continuous when the highlight wraps across lines. */
+    -webkit-box-decoration-break: clone;
+            box-decoration-break: clone;
+  }
+  .section .num {
+    color: var(--highlight-accent);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    /* A hair larger so numerals pop without breaking the line grid. */
+    font-size: 1.06em;
+  }
+  /* Callout — a one-line punchline pill any section can carry below its body when it has
+     a single sentence-level "shout this" claim. Two variants:
+       • .callout         → centered pill, accent-tinted background, best for results-style claims
+       • .callout.callout-bar → left-aligned with a 4px accent bar on the left, best for narrative
+                                 sections (Takeaway, Problem) where the sentence is the mic-drop
+     Both share the same color treatment so the poster has one consistent emphasis vocabulary. */
+  .callout {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 999px;
+    padding: 0.55em 0.95em;
+    /* Symmetric top + bottom margin so a callout at the BOTTOM of a section
+       (e.g. .takeaway's mic-drop line) doesn't sit flush against the card's
+       inner padding edge. Without bottom margin the callout's colored
+       background pushes content_bbox up to fillRatio > 1.0 — slack reports
+       FULL (because fullRatio stays in band) but the eye sees the callout's
+       bg-tinted box visibly crowding the card border. */
+    margin: 0.55em 0;
+    font-weight: 700;
+    text-align: center;
+    font-size: 0.98em;
+    line-height: 1.35;
+  }
+  .callout.callout-bar {
+    border-radius: 4px;
+    text-align: left;
+    border-left: 4px solid var(--accent);
+    padding: 0.5em 0.8em;
+    background: var(--accent-soft);
+  }
+  /* `.conclusion` — quiet "so-what" line under Key Results and Ablation Study. Distinct
+     visual register from `.callout` (italic, top-bordered, muted) so the section reads
+     as numbers → punchline, not pill stacked on pill. See full template for full rationale. */
+  .conclusion {
+    margin: 0.55em 0 0 0;
+    padding-top: 0.45em;
+    border-top: 1px dashed color-mix(in srgb, var(--accent) 35%, transparent);
+    font-style: italic;
+    font-size: 0.92em;
+    line-height: 1.4;
+    color: var(--text);
+  }
+  .conclusion::before {
+    content: "So what \2192  ";
+    font-style: normal;
+    font-weight: 700;
+    font-size: 0.78em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--highlight-accent);
+    margin-right: 0.35em;
+  }
+  .number { color: var(--callout); font-weight: 700; }
+
+  /* Arch — a stacked-row architecture diagram. Use it inside any section (especially
+     Motivation) when the section's story is a layered architecture or a tiered stack —
+     e.g., "data layer / model layer / agent layer", "raw repo / encoding / operation".
+     Each .arch-row is a labeled banner; stacked rows read top-to-bottom as the architecture
+     stack. Skip it if the story is purely sequential (use prose) or a flat set of properties.
+
+     Markup:
+       <div class="arch">
+         <div class="arch-row"><span class="arch-label">Top</span><span class="arch-body">Agent</span></div>
+         <div class="arch-row"><span class="arch-label">Mid</span><span class="arch-body">RPG</span></div>
+         <div class="arch-row"><span class="arch-label">Base</span><span class="arch-body">Code</span></div>
+       </div>
+     If you only need one piece of text per row, omit .arch-label. */
+  .arch {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0.55em 0 0 0;
+  }
+  .arch-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1.5px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    border-radius: 4px;
+    padding: 0.4em 0.7em;
+    font-weight: 700;
+    font-size: 0.95em;
+    line-height: 1.25;
+  }
+  /* Progressive tint so rows read as layers (top lighter, base stronger). */
+  .arch-row:nth-child(1) { background: color-mix(in srgb, var(--accent) 8%, white); }
+  .arch-row:nth-child(2) { background: color-mix(in srgb, var(--accent) 14%, white); }
+  .arch-row:nth-child(3) { background: color-mix(in srgb, var(--accent) 20%, white); }
+  .arch-row:nth-child(4) { background: color-mix(in srgb, var(--accent) 26%, white); }
+  .arch-label {
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+    opacity: 0.75;
+    flex: 0 0 auto;
+    min-width: 4.2em;
+  }
+  .arch-body { flex: 1 1 auto; }
+
+  /* Figure scales to fill the section's remaining vertical room — kills blank space.
+     The IMG is itself a flex child so it shrinks (rather than overflows) when the figure
+     box is tight, leaving the figcaption inside the section. Without `flex: 1 1 auto` +
+     `min-height: 0` on the img, intrinsic image height bullies the caption out of the
+     section's bounds — which is exactly the bug to avoid. */
+  figure { margin: 0.5em 0 0 0; text-align: center; display: flex; flex-direction: column; align-items: center; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  figure img { flex: 1 1 auto; min-width: 0; min-height: 0; width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; border: 1px solid #e5e5e0; border-radius: var(--fig-img-radius, 4px); background: white; }
+  figcaption { flex: 0 0 auto; font-size: 0.82em; color: var(--muted); margin-top: 0.35em; font-style: italic; max-width: 92%; line-height: 1.3; }
+
+  /* Method figure FLOOR. The half template currently always carries `.grow` on
+     the Method section (it's the only section in column 2), so the figure
+     normally gets the leftover column height naturally. But if a future edit
+     ever drops `.grow` (e.g., splitting Method's column into Method + another
+     section), the Method figure would collapse to a thumbnail because the
+     fit() script's vertical budget reads `section.bottom - figRect.top` and
+     an auto-sized section settles at bullets+caption height. The 14cqh soft
+     hint reserves the slot; the fit() script enforces a 24cqh hard floor.
+     Same rule as poster_full_template -- see that file for the longer
+     explanation of the FIG/NARROW symptom. */
+  .section[data-section="method"] > figure { min-height: 14cqh; }
+
+  /* Density helpers — use these to *fill* a sparse section with real content, not padding. */
+  /* Headline Numbers — "hero + supporting" layout:
+     ONE big number gets the eye (the paper's signature result), with
+     three smaller supporting metrics under a thin divider. Replaces the
+     old 2×2 grid of bordered stat boxes, which read as "card-in-card"
+     visual noise and forced uppercase labels to wrap awkwardly. */
+  /* Headline Numbers — promoted from quiet-white to a filled accent block.
+     The whole hero sits inside its section card (which has our new bg +
+     stripe), but now it's clearly a "spotlight" rather than another body
+     paragraph: tinted background, accent-colored numbers, white-ish supporting
+     tiles. Visual weight matches the section's importance ("here are the
+     headline results — look here"). Layout dims unchanged: same column-flex
+     content as before, just colored. */
+  .headline-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--accent) 12%, white),
+      color-mix(in srgb, var(--accent) 6%, white));
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    border-radius: 8px;
+    padding: 18pt 20pt 14pt;
+    /* Subtle inner glow toward the accent — gives the block a slight depth. */
+    box-shadow: inset 0 0 32pt color-mix(in srgb, var(--accent) 6%, transparent),
+                0 2px 4px rgba(0,0,0,0.03);
+  }
+  .headline-hero .hero-val   { font-size: 160pt; color: var(--accent); font-weight: 800; line-height: 0.95; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .headline-hero mjx-container[jax="SVG"] { max-width: 100% !important; }
+  .headline-hero mjx-container svg { max-width: 100% !important; height: auto !important; }
+  .headline-hero .hero-val mjx-container[jax="SVG"] { font-size: 46% !important; }
+  .headline-hero .hero-label { font-size: 40pt; color: var(--text); font-weight: 600; line-height: 1.1; margin-top: 0.05em; }
+  .headline-hero .hero-note  { font-size: 30pt; color: var(--muted); font-style: italic; line-height: 1.15; }
+  .headline-hero .supporting {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-around;
+    gap: 1em;
+    width: 100%;
+    margin-top: 0.5em;
+    padding-top: 0.6em;
+    border-top: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .headline-hero .stat-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.05em;
+    flex: 1 1 0;
+    min-width: 0;
+    /* No background on supporting tiles — they sit naked on the hero's
+       gradient ground. The previous white-pad rectangle made the trio
+       look like disjointed mini-cards. */
+  }
+  .headline-hero .stat-mini .val { font-size: 72pt; color: var(--callout); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .headline-hero .stat-mini .lbl { font-size: 30pt; color: var(--muted); line-height: 1.2; margin-top: 0.2em;  min-height: 2.4em; /* ALIGN-FIX: reserve 2 lines so 1-line and 2-line labels occupy identical height -> the .val numbers above always line up. */ }
+  /* Compact left/right Headline Numbers (2026-07-04). The centered column
+     stacked the hero value over a full-width row of 3 supporting stats, which
+     read WIDE and SPARSE (three small numbers marooned across the whole card).
+     When the hero value is wrapped in `.hero-main` (current template), lay the
+     card out as hero-on-the-LEFT + supporting stats stacked on the RIGHT under
+     a vertical divider: denser, fills the box, and the right rail holds the
+     stats without stretching. Purely additive — a legacy hero without
+     `.hero-main` keeps the old centered column layout. */
+  .headline-hero:has(.hero-main) { flex-direction: row; align-items: stretch; text-align: left; gap: 1.1em; }
+  .headline-hero .hero-main { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .headline-hero:has(.hero-main) .hero-val { font-size: 120pt; }
+  .headline-hero:has(.hero-main) .supporting {
+    flex: 0 0 auto; flex-direction: column; width: auto; max-width: 44%;
+    margin-top: 0; padding-top: 0; padding-left: 0.9em;
+    border-top: none; border-left: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    justify-content: center; gap: 0.5em;
+  }
+  .headline-hero:has(.hero-main) .stat-mini { flex-direction: row; align-items: baseline; gap: 0.35em; text-align: left; }
+  .headline-hero:has(.hero-main) .stat-mini .val { font-size: 46pt; }
+  .headline-hero:has(.hero-main) .stat-mini .lbl { min-height: 0; margin-top: 0; text-align: left; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 0.5em; }
+  .stat { background: white; border: 1.5px solid var(--callout); border-radius: 6px; padding: 6px 6px; text-align: center; }
+  .stat .val { font-size: 80pt; color: var(--callout); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .stat .lbl { font-size: 0.74em; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.2; }
+  table.results { width: 100%; border-collapse: collapse; font-size: 0.93em; margin-top: 0.4em; }
+  table.results th, table.results td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #e5e5e0; font-variant-numeric: tabular-nums; }
+  table.results th { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  table.results td.method { text-align: left; font-weight: 600; font-variant-numeric: normal; }
+  table.results th:first-child { text-align: left; }  /* first-column header matches its left-aligned method cells (was centered -> misaligned) */
+  table.results tr.best td { color: var(--accent); font-weight: 800; background: var(--accent-soft); }
+
+  @media (max-width: 900px) { .columns { grid-template-columns: 1fr 1fr; } }
+
+  /* Narration controls. Align listen button to the top of the heading (not center) so
+     when h2 text wraps to two lines the button stays anchored at the first line instead of
+     drifting to the vertical middle and looking detached from the heading. */
+  /* Heading is plain block flow now that the per-section Listen button is absolutely
+     positioned out of the heading row (see `.listen-btn`). We pad the right edge so
+     the title text never visually collides with the floating button when it's shown. */
+  .section h2 { padding-right: 5.5em; }
+  /* Headline Numbers has no Listen button, so don't reserve right-edge padding —
+     lets the heading sit on one line at narrow column widths. */
+  .section[data-section="headline-numbers"] h2 { padding-right: 0; }
+  /* Listen buttons are hidden by default — press "a" to reveal them. Keeps the printed/screenshot
+     poster clean; reviewers who want audio toggle the controls in. We use `visibility: hidden`
+     (not `display: none`) on both kinds of Listen buttons because they're absolutely / fixed
+     positioned: visibility keeps them out-of-flow either way, and avoiding `display` changes
+     guarantees no layout recompute on the rest of the page when toggling. */
+  body:not(.show-listen) .listen-btn { visibility: hidden; }
+  body:not(.show-listen) .listen-all { visibility: hidden; }
+  .listen-btn {
+    position: absolute;
+    top: 32pt;
+    right: 32pt;
+    z-index: 5;
+    font-size: 0.7em;
+    font-weight: 600;
+    color: white;
+    background: var(--section-accent, var(--accent));
+    border: 1.5px solid white;
+    border-radius: 999px;
+    padding: 0.25em 0.7em;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .listen-btn:hover { background: var(--callout); }
+  .listen-btn.playing { background: var(--callout); }
+  .listen-btn::before { content: "\25B6  "; font-size: 0.85em; }
+  .listen-btn.playing::before { content: "\25A0  "; }
+  /* "Listen to full narration" is anchored to the bottom-LEFT of the titlebar so it sits
+     in the title region but stays out of normal flow. The smaller "Listen" pill (the
+     opening-narration twin of every section's Listen pill) now lives in the TOP-RIGHT
+     of the titlebar. Sized to MATCH the per-section .listen-btn pill (same font-size,
+     padding, border-radius, accent fill, white pill border, ▶/■ iconography) so the
+     chrome reads as one consistent control vocabulary across the whole poster. Two
+     reasons it's out of flow:
+     (1) toggling the audio controls on/off with the "a" key must not reflow the titlebar;
+     (2) swapping between the idle "Full Listen" and playing "Stop" labels would otherwise
+     change the titlebar's measured height. Absolute positioning inside the titlebar takes
+     the button out of flow but keeps it visually tied to the title region. */
+  .listen-all {
+    position: absolute;
+    bottom: 32pt;
+    left: 48pt;
+    z-index: 100;
+    font-size: 42pt;         /* matches .listen-btn rendered size (0.7em of h2's 60pt) */
+    font-weight: 600;
+    background: var(--accent);
+    color: white;
+    border: 1.5px solid white;
+    border-radius: 999px;
+    padding: 0.25em 0.7em;   /* matches .listen-btn padding ratio for identical pill size */
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .listen-all:hover { background: var(--callout); }
+  .listen-all.playing { background: var(--callout); color: white; }
+  .listen-all::before { content: "\25B6  "; font-size: 0.85em; }
+  .listen-all.playing::before { content: "\25A0  "; }
+  /* Title listen button — small companion to .listen-all that plays the
+     paper's opening narration (title + authors + one-sentence framing).
+     Sits in the titlebar's TOP-RIGHT corner, sized to MATCH the per-section
+     .listen-btn pill (same font-size, padding, border-radius, accent fill,
+     white pill border, ▶/■ play/stop iconography) so the chrome reads as one
+     consistent control vocabulary across the whole poster — the titlebar's
+     "Listen" pill is the opening-narration twin of every section's "Listen"
+     pill. Same audio engine (`play("title")`) so it inherits all the
+     pause/resume/state-clear logic. Hidden by the same `body:not(.show-listen)`
+     gate as the rest of the narration UI. */
+  body:not(.show-listen) .listen-title { visibility: hidden; }
+  .listen-title {
+    position: absolute;
+    top: 32pt;
+    right: 32pt;             /* top-right corner of the titlebar */
+    z-index: 100;
+    font-size: 42pt;         /* matches .listen-btn rendered size (0.7em of h2's 60pt) */
+    font-weight: 600;
+    color: white;
+    background: var(--accent);
+    border: 1.5px solid white;
+    border-radius: 999px;
+    padding: 0.25em 0.7em;   /* matches .listen-btn padding ratio for identical pill size */
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .listen-title:hover { background: var(--callout); }
+  .listen-title.playing { background: var(--callout); }
+  .listen-title::before { content: "\25B6  "; font-size: 0.85em; }
+  .listen-title.playing::before { content: "\25A0  "; }
+
+  /* ---- DEBUG OVERLAY (toggle with "d") -----------------------------------
+     Press `d` to outline every laid-out block on the poster and stamp each
+     one with its measured size. Labels show:
+       • per-section badge: actual rendered height (px), and if a sibling
+         poster_debug.json was loaded, the estimator's predicted height plus
+         the delta — exposes where measure_layout.js is wrong.
+       • per-column badge: live slackRatio computed from actual rendered
+         heights vs the column's content area.
+     Everything is `pointer-events: none` so the overlay never blocks audio
+     controls or text selection. Toggle is `body.debug` so the styles stay
+     fully dormant during normal viewing and during PDF/PNG export. */
+  body.debug .col          { outline: 2px dashed rgba(29,58,135,0.55); outline-offset: -2px; position: relative; }
+  body.debug .section      { outline: 2px solid rgba(174,38,34,0.55); }
+  body.debug figure        { outline: 2px solid rgba(34,139,34,0.7); }
+  body.debug .stat-grid,
+  body.debug .arch,
+  body.debug table,
+  body.debug .callout      { outline: 1.5px dashed rgba(180,120,0,0.7); }
+  body.debug .section p,
+  body.debug .section ul,
+  body.debug .section ol   { outline: 1px dashed rgba(0,0,0,0.25); outline-offset: -1px; }
+  /* Debug chrome (badges + bbox labels/borders) lives INSIDE .poster, which
+     the #poster-stage controller scales by `transform: scale(s)` to fit the
+     window (s≈0.25 in a normal browser window). Fixed pt/px sizes would shrink
+     with it -> unreadably small text + hairline borders. The debug JS sets
+     `--dbg-scale: 1/s` on .poster, and every debug size below is multiplied by
+     it so the chrome stays a CONSTANT on-screen size at any zoom. Defaults to 1
+     (and s===1 in the print viewport), so this is a no-op for the PDF/PNG.
+     Sizes are deliberately kept SMALLER than the poster's own on-screen body
+     text (~14px) so the long (x,y,w,h) labels fit their section boxes instead
+     of overflowing and colliding across cards. */
+  .dbg-badge {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+    line-height: 1.1;
+    padding: calc(2pt * var(--dbg-scale, 1)) calc(5pt * var(--dbg-scale, 1));
+    border-radius: 3pt;
+    pointer-events: none;
+    white-space: nowrap;
+    letter-spacing: 0;
+  }
+  body.debug .dbg-badge    { display: inline-block; }
+  .dbg-badge.dbg-col       { top: 4pt; right: 4pt; font-size: calc(9pt * var(--dbg-scale, 1)); background: rgba(29,58,135,0.92); color: #fff; }
+  .dbg-badge.dbg-col.over  { background: rgba(174,38,34,0.95); }
+  .dbg-badge.dbg-col.ok    { background: rgba(40,120,40,0.95); }
+  .dbg-badge.dbg-section   { top: 4pt; right: 4pt; font-size: calc(8pt * var(--dbg-scale, 1)); background: rgba(174,38,34,0.92); color: #fff; }
+  .dbg-badge.dbg-section .dbg-delta-pos { color: #ffd1d1; }
+  .dbg-badge.dbg-section .dbg-delta-neg { color: #d1ffd1; }
+
+  /* Per-section bbox overlays. Two rectangles per section: the card box
+     (the .section's border-box, drawn red) and the content bbox (union of
+     the section's children excluding chrome like .listen-btn/.dbg-badge,
+     drawn green). Each carries an (x, y, w, h) label in poster-local CSS
+     pixels — same coordinate system the `check_poster.py slack` JSON
+     reports, so what you see on screen matches what the staged-fill gate
+     reads. The whole overlay is pointer-events:none so it never blocks
+     audio controls or text selection. */
+  .dbg-bbox {
+    position: absolute; z-index: 9998; pointer-events: none;
+    box-sizing: border-box;
+  }
+  .dbg-bbox-card    { border: 2px solid rgba(174,38,34,0.85); }
+  .dbg-bbox-content { border: 2px dashed rgba(34,139,34,0.95); }
+  .dbg-bbox-figure  { border: 2px dashed rgba(180,120,0,0.95); }
+  .dbg-bbox-label {
+    position: absolute; left: 0; top: -1.4em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: calc(6pt * var(--dbg-scale, 1)); font-weight: 700; line-height: 1.1;
+    padding: calc(1pt * var(--dbg-scale, 1)) calc(3pt * var(--dbg-scale, 1)); border-radius: 2pt; white-space: nowrap;
+    color: #fff;
+  }
+  .dbg-bbox-card    .dbg-bbox-label { background: rgba(174,38,34,0.92); }
+  .dbg-bbox-content .dbg-bbox-label {
+    background: rgba(34,139,34,0.92);
+    top: auto; bottom: -1.4em; /* sit below the box so it doesn't collide with the card label */
+  }
+  .dbg-bbox-figure .dbg-bbox-label {
+    background: rgba(180,120,0,0.95);
+    left: auto; right: 0; /* anchor figure label to the right edge to avoid the content label */
+  }
+  body:not(.debug) .dbg-bbox { display: none; }
+
+  /* ════════════════════════════════════════════════════════════════════
+     CONTENT PATTERNS — reusable widgets the LLM can drop into any
+     section to break up wall-of-text. Catalog + when-to-use guidance in
+     references/content_patterns.md. Updated 2026-06-10 (TFDP design pass).
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* P1: heavy emphasis — solid accent fill, white text */
+  .p-callout-primary {
+    background: var(--accent); color: #fff;
+    padding: 0.3em 0.7em; border-radius: 0.4em;
+    font-weight: 600; line-height: 1.3;
+  }
+  /* P2: soft tinted callout — same family, lighter */
+  .p-callout-soft {
+    background: var(--accent-soft); color: var(--accent);
+    padding: 0.28em 0.65em; border-radius: 0.4em;
+    line-height: 1.3;
+  }
+  /* P3: pull-quote feel — left accent bar, italic */
+  .p-callout-bar {
+    border-left: 0.25em solid var(--accent);
+    padding: 0.12em 0.7em;
+    font-style: italic; color: var(--text);
+    line-height: 1.3;
+  }
+  /* P5: big-number aside — one giant figure + label */
+  .p-key-stat { display: flex; gap: 0.4em; align-items: baseline; padding: 0.25em 0; }
+  .p-key-stat .num { font-size: 3em; color: var(--accent); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .p-key-stat .label { font-size: 0.9em; color: var(--muted); }
+  /* P6: stat-strip — 3–5 mini metrics inline */
+  .p-stat-strip { display: flex; gap: 0.5em; align-items: stretch; }
+  .p-stat-strip .cell {
+    flex: 1 1 0; padding: 0.3em 0.4em;
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    border-radius: 0.5em; text-align: center;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .p-stat-strip .cell .v { font-size: 1.6em; color: var(--accent); font-weight: 700; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .p-stat-strip .cell .l { font-size: 0.65em; color: var(--muted); margin-top: 0.2em; text-wrap: balance; line-height: 1.15; }
+  /* P7: two-column compare — Theirs vs Ours. RULE: the rendered block
+     MUST be wider than tall (width > height). Each .side max 2-3 short
+     lines (≤ ~14 words). If content would push the block taller than
+     wide, use P12 highlight-table or P14 bento instead. */
+  .p-vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.25em; align-items: start; }
+  .p-vs .side { padding: 0.4em 0.45em; border-radius: 0.4em; background: #fafafa; border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent); }
+  .p-vs .side h4 { margin: 0 0 0.2em 0; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+  .p-vs .side.bad { border-color: #d97a7a; }
+  .p-vs .side.good { border-color: var(--accent-2, var(--accent)); background: color-mix(in srgb, var(--accent-2, var(--accent)) 6%, #fff); }
+  .p-vs .sep { font-size: 1.0em; font-weight: 700; color: var(--accent); display: flex; align-items: center; padding: 0 0.05em; }
+  /* P8: numbered steps */
+  .p-steps { display: flex; flex-direction: column; gap: 0.6em; counter-reset: step; }
+  /* A .step is an ordinary flowing paragraph led by a circular number badge.
+     It is deliberately NOT display:flex — a flex .step makes ::before (the
+     circle), every inline <strong>/<em>, and each text run a SEPARATE flex
+     item, shattering the sentence into ragged mini-columns (harmless in wide
+     landscape columns, badly misaligned in narrow portrait ones). Same bug
+     that retired .p-iconlist. Block flow + an inline run-in badge keeps
+     emphasis inline and lets the text wrap as normal prose. */
+  .p-steps .step { counter-increment: step; line-height: 1.4; }
+  .p-steps .step > div, .p-steps .step > p { display: inline; }
+  .p-steps .step::before {
+    content: counter(step);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.5em; height: 1.5em; box-sizing: border-box;
+    margin-right: 0.55em; vertical-align: -0.3em;
+    border-radius: 50%; background: var(--accent); color: #fff;
+    font-weight: 700; font-size: 0.9em; line-height: 1;
+  }
+  /* P9: accent-marker bullet list */
+  /* .p-iconlist (icon-bullet list) — REMOVED 2026-06-11. Flex-based layout
+     split <strong>+text into separate columns ("table-like"); padding-left
+     fallback didn't fully restore semantic flow either. Use plain <ul><li>
+     instead; the browser's default bullet is sufficient and wraps inline. */
+  /* P10: chip / tag list */
+  .p-chips { display: flex; flex-wrap: wrap; gap: 0.3em; }
+  .p-chips span {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent); padding: 0.2em 0.55em;
+    border-radius: 999px; font-size: 0.85em; font-weight: 600;
+  }
+  /* P10 chip variants: when chip list spans MULTIPLE semantic categories
+     (datasets + methods + baselines, etc.) use these variants to color-
+     code each category so the reader can tell groups apart. */
+  .p-chips span.alt {
+    background: color-mix(in srgb, var(--callout, var(--accent-2, var(--accent))) 10%, transparent);
+    color: var(--callout, var(--accent-2, var(--accent)));
+  }
+  .p-chips span.muted {
+    background: color-mix(in srgb, var(--muted) 12%, transparent);
+    color: var(--muted);
+  }
+  /* P11: term — definition rhythm — REMOVED 2026-06-11. The <dl>/<dt>/<dd>
+     two-column layout was hard to size predictably inside the poster grid
+     (text on the right wrapped unpredictably; dt accent competed with the
+     section heading) and the html→pptx walker didn't render the dt/dd
+     layout cleanly. For glossary-shaped content use plain `<ul>` with
+     `<strong>Term</strong> — definition` per item. See
+     references/content_patterns.md for the documented alternative. */
+  /* P12: compact comparison table — winning row tinted */
+  .p-table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+  .p-table th, .p-table td { padding: 0.22em 0.5em; text-align: left; border-bottom: 1px solid color-mix(in srgb, var(--accent) 15%, transparent); }
+  .p-table th { font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); background: color-mix(in srgb, var(--accent) 6%, transparent); font-weight: 700; }
+  .p-table tr.best { background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 700; }
+  /* P14: bento (RETIRED 2026-07-04). The old "big feature tile on the left
+     spanning both rows + two small cells on the right" grid left the tall
+     feature column visibly empty whenever the two small cells filled up.
+     Retired from the catalog; use P6 stat-strip, P12 table, or P16 timeline
+     instead. The rules below degrade any legacy .p-bento markup to a balanced
+     equal-cell grid (the feature cell becomes a full-width top band), so it
+     can never reproduce the empty-big-box look. */
+  .p-bento { display: grid; grid-template-columns: repeat(auto-fit, minmax(6em, 1fr)); gap: 0.5em; align-items: stretch; }
+  .p-bento .cell { background: #fff; border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent); border-radius: 0.5em; padding: 0.4em 0.6em; }
+  .p-bento .cell.feat { background: color-mix(in srgb, var(--accent) 6%, transparent); grid-column: 1 / -1; border: none; }
+  .p-bento .cell h5 { margin: 0 0 0.2em 0; font-size: 0.75em; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; font-weight: 700; }
+  /* P15: equation block */
+  /* Compact contained equation card (posterskill-inspired): a thin
+     full-border rounded tinted pill instead of a big left-bar pull-quote
+     block. ~29% shorter vertically at equal legibility; frees column space
+     for the fill loop. flex-shrink:0 so it never gets squeezed. */
+  .p-eq {
+    background: color-mix(in srgb, var(--accent) 6%, #fff);
+    border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+    border-radius: 0.4em;
+    padding: 0.12em 0.7em; margin: 0.25em 0;
+    font-family: 'Cambria Math', 'Times New Roman', serif;
+    font-size: 1.08em; text-align: center; flex-shrink: 0;
+  }
+  .p-eq .where { display: block; font-family: inherit; font-size: 0.5em; color: var(--muted); margin-top: 0.05em; font-style: italic; }
+  /* P16a — TIMELINE RAILROAD: continuous track, labels below */
+  .p-timeline-railroad { position: relative; padding: 0.6em 0 0.4em 0; }
+  .p-timeline-railroad .track { position: absolute; top: 1.3em; left: 4%; right: 4%; height: 2px; background: color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 2px; }
+  .p-timeline-railroad .nodes { display: flex; justify-content: space-between; position: relative; }
+  .p-timeline-railroad .step { text-align: center; flex: 1 1 0; position: relative; z-index: 1; padding: 0 0.2em; }
+  .p-timeline-railroad .step .node {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.8em; height: 1.8em; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: 0.95em; font-weight: 700;
+    box-shadow: 0 0 0 0.3em var(--bg);
+  }
+  .p-timeline-railroad .step .label { display: block; margin-top: 0.5em; font-size: 0.85em; color: var(--text); line-height: 1.2; font-weight: 600; }
+  .p-timeline-railroad .step .sub { display: block; font-size: 0.7em; color: var(--muted); margin-top: 0.1em; font-style: italic; }
+  /* P16b — TIMELINE CARDS: tinted cards + chevron separators */
+  .p-timeline-cards { display: flex; gap: 0; align-items: stretch; }
+  .p-timeline-cards .card { flex: 1 1 0; background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 0.5em; padding: 0.32em 0.65em; }
+  .p-timeline-cards .card .n { display: inline-flex; align-items: center; justify-content: center; width: 1.7em; height: 1.7em; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.95em; font-weight: 800; line-height: 1; }
+  .p-timeline-cards .card .l { font-size: 0.85em; color: var(--text); margin-top: 0.2em; font-weight: 600; line-height: 1.2; }
+  .p-timeline-cards .card .s { font-size: 0.7em; color: var(--muted); margin-top: 0.15em; font-style: italic; }
+  .p-timeline-cards .arrow { flex: 0 0 1em; font-size: 1.4em; color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  /* P16c — TIMELINE PILLS: badges on a horizontal accent rail */
+  .p-timeline-pills { position: relative; padding: 0.8em 0 0.4em 0; }
+  .p-timeline-pills .rail { position: absolute; top: 1.4em; left: 4%; right: 4%; height: 2px; background: var(--accent); }
+  .p-timeline-pills .pills { display: flex; justify-content: space-between; gap: 0.3em; position: relative; }
+  .p-timeline-pills .pill { flex: 1 1 0; text-align: center; position: relative; z-index: 1; }
+  .p-timeline-pills .pill .badge {
+    display: inline-block; background: var(--accent); color: #fff;
+    padding: 0.25em 0.6em; border-radius: 999px;
+    font-size: 0.85em; font-weight: 700;
+    box-shadow: 0 0 0 0.3em var(--bg);
+  }
+  .p-timeline-pills .pill .l { display: block; margin-top: 0.55em; font-size: 0.75em; color: var(--text); line-height: 1.2; }
+  /* P16d — TIMELINE STEP-BY-ARROW: numbered card + chevron, one tight row */
+  .p-timeline-stepcards { display: flex; align-items: center; gap: 0.15em; }
+  .p-timeline-stepcards .step {
+    display: flex; align-items: center; gap: 0.4em;
+    flex: 1 1 0; background: color-mix(in srgb, var(--accent) 8%, transparent);
+    padding: 0.28em 0.55em; border-radius: 0.5em;
+  }
+  .p-timeline-stepcards .step .n {
+    flex: 0 0 1.6em; width: 1.6em; height: 1.6em;
+    background: var(--accent); color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.95em;
+  }
+  .p-timeline-stepcards .step .l { font-size: 0.85em; line-height: 1.2; font-weight: 600; color: var(--text); }
+  .p-timeline-stepcards .gap { flex: 0 0 0.8em; color: var(--accent); text-align: center; font-size: 1.4em; font-weight: 700; }
+  /* Robustness: a numbered widget written with the bare container class
+     `p-timeline` (no -cards / -railroad / -pills / -stepcards variant) or a
+     stray `.n` / `.node` under it would otherwise get no styling and fall back
+     to bare digits stacking vertically (cramped, no circle). Lay the generic
+     container out as a horizontal wrap row and circle any un-scoped number so
+     it still reads as numbered steps. Scoped to the EXACT `.p-timeline` class
+     token, so the four real variants are untouched. */
+  .p-timeline { display: flex; flex-wrap: wrap; gap: 0.7em 1em; align-items: stretch; }
+  .p-timeline .n, .p-timeline .node {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.7em; height: 1.7em; border-radius: 50%;
+    background: var(--accent); color: #fff; font-weight: 800; font-size: 0.95em; line-height: 1;
+  }
+  /* P17: full-width labeled banner */
+  .p-banner {
+    display: flex; flex-direction: column; gap: 0.4em;
+    background: color-mix(in srgb, var(--callout, var(--accent)) 12%, transparent);
+    border-radius: 0.35em; padding: 0.3em 0.7em;
+    border-left: 0.25em solid var(--callout, var(--accent));
+  }
+  .p-banner .tag {
+    background: var(--callout, var(--accent)); color: #fff;
+    padding: 0.15em 0.45em; border-radius: 0.25em;
+    font-size: 0.7em; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    flex: 0 0 auto; align-self: flex-start;
+  }
+
+
+    /* Render-time "expand" lives in render_poster.py, NOT in template CSS.
+     At the FINAL deliverable render it grows each under-filled card's inner
+     row-gaps toward POSTER_EXPAND_THRESHOLD (default 0.98) so a poster that
+     converged at the 0.90 FULL gate still reads as full -- without re-grinding.
+     It never resizes a figure (figures are flex:0 0 auto -> aspect ratio kept)
+     and never changes a column's height (parent-height guard), so column
+     bottoms stay aligned. OFF during the staged-fill loop, so check_poster.py
+     slack/polish measure the natural top-aligned layout and the 0.90 gate
+     stays correct. No template CSS hook needed. */
+  /* Scan-to-Read CSS lives in the chosen assets/scan/<variant>.html partial, composed
+     in at the SCAN_SECTION hook below (the --scan axis: aside | hero | contact |
+     directory | banner | twin | chips). Each partial keeps the .tq / .qr-img contract
+     fit_logos relies on, the empty-tile / no-QR auto-hide, and the v5 mutual-exclusion. */
+  </style>
+</head>
+<body>
+<!-- #poster-stage holds the scaled footprint; the controller IIFE at the end
+     of <body> scales .poster (box + content together) to fit the window. -->
+<div id="poster-stage">
+<div class="poster">
+
+  {{HEADER}}
+
+  <div class="columns">
+
+    <!-- Column 1: Problem, Motivation, Contribution (Contribution is optional — remove if spec omits it). -->
+    <div class="col">
+      <div class="section" data-section="problem">
+        <h2>Problem <button class="listen-btn" data-section="problem">Listen</button></h2>
+        <p>{{PROBLEM}}</p>
+      </div>
+      <!-- Non-bottom section: size to content (no `.grow`). -->
+      <div class="section grow" data-section="motivation">
+        <h2>Motivation <button class="listen-btn" data-section="motivation">Listen</button></h2>
+        <ul>
+          <li>{{MOTIVATION_1}}</li>
+          <li>{{MOTIVATION_2}}</li>
+        </ul>
+        <!-- OPTIONAL: half-column Motivation figure. If the spec's Motivation figure line is `**Figure:** none`, REMOVE this entire <figure> block. -->
+        <figure><img src="{{TEASER_FIGURE}}" alt=""><figcaption>{{TEASER_CAPTION}}</figcaption></figure>
+      </div>
+      <!-- ════════════════════════════════════════════════════════════════════════
+           CONTRIBUTION SECTION — REMOVED FROM DEFAULT TEMPLATE (per SKILL.md Step 4)
+           ════════════════════════════════════════════════════════════════════════
+           Most papers do NOT need a standalone Contribution card — it almost always
+           duplicates Method + Key Result and adds visual repetition without adding
+           information. To keep this section, the paper's headline novelty MUST be
+           the contribution list itself (a new dataset / benchmark / API / algorithmic
+           primitive whose value is "we built and released X, Y, Z").
+
+           If — AND ONLY IF — that condition is true, uncomment the block below AND
+           move `.grow` off the Motivation section above onto this one AND add
+           "contribution" back into the PLAYLIST array further down.
+
+           DO NOT uncomment this just because a column reads SPARSE. Prefer in order:
+           (1) inject the secondary figure into Key Result / Ablation / Qualitative
+           (2) append per-section Additional text from the spec
+           (3) inject a paper-specific custom section (Step 4 menu)
+           (4) re-insert Ablation (if real ablation data exists)
+           Contribution is the LAST option and almost never the right one.
+      <div class="section grow" data-section="contribution">
+        <h2>Contribution <button class="listen-btn" data-section="contribution">Listen</button></h2>
+        <ul>
+          <li>{{CONTRIBUTION_1}}</li>
+          <li>{{CONTRIBUTION_2}}</li>
+          <li>{{CONTRIBUTION_3}}</li>
+        </ul>
+      </div>
+      ════════════════════════════════════════════════════════════════════════ -->
+    </div>
+
+    <!-- Column 2 -->
+    <div class="col">
+      <div class="section grow" data-section="method">
+        <h2>Method <button class="listen-btn" data-section="method">Listen</button></h2>
+        <ul>
+          <li>{{METHOD_1}}</li>
+          <li>{{METHOD_2}}</li>
+          <li>{{METHOD_3}}</li>
+        </ul>
+        <figure><img src="{{METHOD_FIGURE}}" alt="half"><figcaption>{{METHOD_CAPTION}}</figcaption></figure>
+      </div>
+    </div>
+
+    <!-- Column 3 -->
+    <div class="col">
+      <!-- OPTIONAL: Dataset / Benchmark. Default = REMOVE this entire `.section` block at lean-render time. Keep it ONLY if (a) the paper *introduces* a new dataset/benchmark (treat as first-class — render in the initial pass), or (b) the staged-fill loop needs it to fill column slack. HARD RULE: if Key Results overflows once Dataset is added, drop Dataset immediately — optional sections are space fillers; if they don't fit, they don't go in. When kept, also keep "dataset-benchmark" in the PLAYLIST array. -->
+      <div class="section" data-section="dataset-benchmark">
+        <h2>Dataset / Benchmark <button class="listen-btn" data-section="dataset-benchmark">Listen</button></h2>
+        <ul>
+          <li>{{DATASET_1}}</li>
+          <li>{{DATASET_2}}</li>
+        </ul>
+      </div>
+      <div class="section grow" data-section="key-result">
+        <h2>Key Results <button class="listen-btn" data-section="key-result">Listen</button></h2>
+        <table class="results">
+          <tr><th>Method</th><th>Metric</th></tr>
+          <tr><td class="method">{{BASELINE}}</td><td>{{BASELINE_NUM}}</td></tr>
+          <tr class="best"><td class="method">{{OURS}}</td><td>{{OURS_NUM}}</td></tr>
+        </table>
+        <div class="callout">{{HEADLINE_DELTA}}</div>
+        <p class="conclusion">{{KEY_RESULT_CONCLUSION}}</p>
+      </div>
+    </div>
+
+    <!-- Column 4: Ablation Study (optional), Headline Numbers, Takeaway. -->
+    <div class="col">
+      <!-- OPTIONAL: Ablation Study. Default = REMOVE this entire `.section` block. Keep it ONLY if the right column would otherwise look sparse (e.g., fewer than 3 Headline Numbers stats AND a short Takeaway). HARD RULE (see SKILL.md §9c step B′): if the right column has ANY negative slack after rendering, drop this section immediately — optional sections are space fillers; if they don't fit, they don't go in. When kept, also keep "ablation-study" in the PLAYLIST array. Show only the top 1 or top 2 most important ablation rows — drop the second `<li>` if just one matters. -->
+      <div class="section" data-section="ablation-study">
+        <h2>Ablation Study <button class="listen-btn" data-section="ablation-study">Listen</button></h2>
+        <ul>
+          <li>{{ABLATION_1}}</li>
+          <li>{{ABLATION_2}}</li>
+        </ul>
+        <p class="conclusion">{{ABLATION_CONCLUSION}}</p>
+      </div>
+      <div class="section" data-section="headline-numbers">
+        <h2>Headline Numbers</h2>
+        <!-- Hero + supporting. {{HERO_VAL}} = signature number (10ft visible);
+             {{HERO_LABEL}} = what it measures; {{HERO_NOTE}} = one-liner
+             italic punchline. 3 supporting stats under a thin divider.
+             If a paper has <4 numbers, drop unused .stat-mini blocks.
+             Never invent — every value must trace to text.txt. -->
+        <div class="headline-hero">
+          <div class="hero-main"><div class="hero-val">{{HERO_VAL}}</div>
+          <div class="hero-label">{{HERO_LABEL}}</div>
+          <div class="hero-note">{{HERO_NOTE}}</div></div>
+          <div class="supporting">
+            <div class="stat-mini"><div class="val">{{STAT_2_VAL}}</div><div class="lbl">{{STAT_2_LBL}}</div></div>
+            <div class="stat-mini"><div class="val">{{STAT_3_VAL}}</div><div class="lbl">{{STAT_3_LBL}}</div></div>
+            <div class="stat-mini"><div class="val">{{STAT_4_VAL}}</div><div class="lbl">{{STAT_4_LBL}}</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="section grow" data-section="takeaway">
+        <h2>Takeaway <button class="listen-btn" data-section="takeaway">Listen</button></h2>
+        <p>{{TAKEAWAY}}</p>
+      </div>
+      {{SCAN_SECTION}}
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Narration: mp3s live in assets/audio/<id>.mp3. Edit the playlist to match the section IDs used above. -->
+<audio id="narration-player" preload="none"></audio>
+<script>
+(function () {
+  // Derive the "now playing" highlight ring so it CONTRASTS the VI theme accent:
+  // a blue poster (#1d3a87) gets a red ring, a red poster (#ae2622) gets a blue
+  // ring. Without this, a red-VI poster would draw the playback cue in the same
+  // red as its own frame and the highlight would be invisible. We read the live
+  // --accent (set by template substitution), measure how red-vs-blue it leans,
+  // and pick the opposite preset.
+  (function setPlayHighlight() {
+    const root = document.documentElement;
+    const cs = getComputedStyle(root);
+    const accent = (cs.getPropertyValue("--accent") || "").trim();
+    const red = cs.getPropertyValue("--play-highlight-red").trim() || "#ae2622";
+    const blue = cs.getPropertyValue("--play-highlight-blue").trim() || "#1d3a87";
+    // Parse the accent to RGB (handles #rgb / #rrggbb) to decide its dominant hue.
+    let r = 0, g = 0, b = 0;
+    const m = accent.replace("#", "");
+    if (m.length === 3) { r = parseInt(m[0] + m[0], 16); g = parseInt(m[1] + m[1], 16); b = parseInt(m[2] + m[2], 16); }
+    else if (m.length >= 6) { r = parseInt(m.slice(0, 2), 16); g = parseInt(m.slice(2, 4), 16); b = parseInt(m.slice(4, 6), 16); }
+    // Reddish accent -> blue ring; otherwise (bluish/neutral) -> red ring.
+    root.style.setProperty("--play-highlight", r >= b ? blue : red);
+  })();
+
+  const PLAYLIST = ["title", "problem", "motivation", "method", "dataset-benchmark", "key-result", "ablation-study", "takeaway"];
+  const player = document.getElementById("narration-player");
+  const sectionBtns = document.querySelectorAll(".listen-btn, .listen-title");
+  const listenAll = document.querySelector("[data-listen-all]");
+  let current = null;        // section id currently playing
+  let queue = [];            // remaining section ids when playing-all
+
+  function srcFor(id) { return "assets/audio/" + id + ".mp3"; }
+  function btnFor(id) { return document.querySelector('.listen-btn[data-section="' + id + '"], .listen-title[data-section="' + id + '"]'); }
+  function sectionFor(id) {
+    // Region to ring while `id` plays. Sections live in .section; the opening
+    // "title" narration rings the whole .titlebar (carries data-section="title").
+    return document.querySelector(
+      '.section[data-section="' + id + '"], .titlebar[data-section="' + id + '"]');
+  }
+
+  function clearState() {
+    // One sweep clears every highlight: section buttons, section rings, the
+    // titlebar ring, and the Full-Listen pill.
+    document.querySelectorAll(".playing").forEach(e => e.classList.remove("playing"));
+    current = null;
+  }
+
+  function play(id, opts) {
+    opts = opts || {};
+    if (current === id && !player.paused) { player.pause(); return; }
+    clearState();
+    current = id;
+    player.src = srcFor(id);
+    const p = player.play();
+    if (p && p.catch) p.catch(err => { console.warn("audio play failed for " + id, err); clearState(); });
+    const btn = btnFor(id);
+    if (btn) btn.classList.add("playing");
+    const sec = sectionFor(id);
+    if (sec) sec.classList.add("playing");
+    if (opts.fromAll) listenAll.classList.add("playing");
+  }
+
+  sectionBtns.forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      queue = []; // a manual click cancels the play-all queue
+      play(btn.dataset.section);
+    });
+  });
+
+  listenAll.addEventListener("click", () => {
+    if (listenAll.classList.contains("playing")) {
+      queue = [];
+      player.pause();
+      clearState();
+      return;
+    }
+    queue = PLAYLIST.slice();
+    const first = queue.shift();
+    if (first) play(first, { fromAll: true });
+  });
+
+  player.addEventListener("ended", () => {
+    const wasPlayAll = listenAll.classList.contains("playing");
+    clearState();
+    if (wasPlayAll && queue.length) {
+      const next = queue.shift();
+      play(next, { fromAll: true });
+    } else {
+      queue = [];
+    }
+  });
+
+  player.addEventListener("pause", () => {
+    if (player.ended) return;
+    // user paused mid-clip — drop highlighting but keep src so resume works
+    document.querySelectorAll(".playing").forEach(e => e.classList.remove("playing"));
+  });
+})();
+</script>
+
+<script>
+// Keyboard shortcuts: "s" toggles fullscreen, "a" toggles the Listen audio controls.
+// Skip when the user is typing into a form field so we don't hijack text input.
+(function () {
+  function isTyping(el) {
+    if (!el) return false;
+    const tag = el.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+  }
+  // When fullscreen turns on/off, re-fit the poster to the new viewport.
+  // The #poster-stage controller (defined at the very end of <body>) owns the
+  // transform; here we just ask it to recompute. It scales box + content
+  // together, so fullscreen fills the screen with the whole poster visible.
+  function syncPosterFit() {
+    if (window.__fitPosterStage) window.__fitPosterStage();
+  }
+  document.addEventListener("fullscreenchange", syncPosterFit);
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (isTyping(e.target)) return;
+    const k = e.key.toLowerCase();
+    if (k === "s") {
+      e.preventDefault();
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(err => console.warn("fullscreen failed", err));
+      }
+    } else if (k === "a") {
+      e.preventDefault();
+      document.body.classList.toggle("show-listen");
+    } else if (k === "d") {
+      e.preventDefault();
+      window.__togglePosterDebug && window.__togglePosterDebug();
+    }
+  });
+})();
+</script>
+
+<script>
+// Debug overlay: bounding boxes + per-section/per-column size labels.
+// Toggled by `d` (see keybindings script above). The CSS in <style> already
+// paints the outlines via `body.debug`; this script computes and stamps
+// numeric labels on first toggle, and re-stamps on every subsequent toggle
+// so the values stay accurate if the poster content changed.
+//
+// Estimator deltas: if a sibling file named `poster_debug.json` sits next
+// to this HTML and contains `{ columns: [{ index, sections: [{ id, used }] }] }`
+// (the exact shape `measure_layout.js --json` already emits), each section
+// badge gains an "est=NNNpx (Δ±NN)" line so you can see where the estimator
+// is off. Loaded lazily on first toggle; missing file is silent.
+(function () {
+  let estimates = null;          // { "problem": estPx, ... } once loaded
+  let estimatesTried = false;
+
+  function loadEstimates(cb) {
+    if (estimatesTried) { cb(); return; }
+    estimatesTried = true;
+    // Resolve sibling URL; works for file:// too (fetch may fail there — that's OK).
+    const url = new URL("poster_debug.json", document.baseURI).toString();
+    fetch(url).then(r => r.ok ? r.json() : null).then(j => {
+      if (!j || !Array.isArray(j.columns)) { cb(); return; }
+      estimates = {};
+      for (const c of j.columns) {
+        for (const s of (c.sections || [])) {
+          if (s && s.id) estimates[s.id] = s.used;
+        }
+      }
+      cb();
+    }).catch(() => cb());
+  }
+
+  function clearBadges() {
+    document.querySelectorAll(".dbg-badge, .dbg-bbox").forEach(n => n.remove());
+  }
+
+  // Stamp two rectangles per section onto the .poster: the card border-box
+  // and the content union (children excluding chrome). Coordinates are
+  // poster-local CSS pixels — the same frame `check_poster.py slack`
+  // reports — so the visible boxes match the JSON the staged-fill gate
+  // reads. Drawn as siblings of the column grid inside .poster, NOT as
+  // children of each section, so the absolute positioning resolves
+  // against one stable origin.
+  function stampBboxes() {
+    const poster = document.querySelector(".poster");
+    if (!poster) return;
+    const pr = poster.getBoundingClientRect();
+    // The #poster-stage controller scales .poster by `transform: scale(s)` to
+    // fit the window, so getBoundingClientRect() returns post-transform SCREEN
+    // pixels. offsetWidth is the untransformed layout width (always the 5760
+    // canvas), so s = pr.width / offsetWidth recovers the live scale. Divide
+    // every screen-space delta by s to get canvas-local coords that (a) match
+    // check_poster.py slack's JSON and (b) render correctly once re-scaled by
+    // the transform: the .dbg-bbox divs are appended INSIDE the scaled .poster,
+    // so a value left in screen px would be scaled a SECOND time -> the s^2
+    // shrink-into-the-top-left bug. In the print viewport s===1 (no-op).
+    const s = poster.offsetWidth ? pr.width / poster.offsetWidth : 1;
+    // Counter-scale all debug chrome (badges + bbox labels) by 1/s so the text
+    // stays a constant on-screen size despite the stage's transform: scale(s).
+    // CSS reads it as `calc(<pt> * var(--dbg-scale))`. s===1 at print -> no-op.
+    poster.style.setProperty("--dbg-scale", (s > 0 ? 1 / s : 1).toFixed(4));
+    const r2 = (n) => Math.round(n * 10) / 10;
+    const toLocal = (r) => ({
+      x: r2((r.left - pr.left) / s), y: r2((r.top - pr.top) / s),
+      w: r2(r.width / s),            h: r2(r.height / s),
+    });
+    // Make sure the .poster is positioned so our absolute rects anchor here.
+    // The templates set `.poster` to no explicit position; flip to relative
+    // only while debugging so we don't disturb the print layout.
+    poster.style.position = poster.style.position || "relative";
+    document.querySelectorAll(".section[data-section]").forEach(sec => {
+      const id = sec.getAttribute("data-section");
+      const card = toLocal(sec.getBoundingClientRect());
+      // Content union: same rule as check_poster.py slack — DEEP walk over
+      // every descendant (minus .listen-btn and debug chrome). The deep walk
+      // matters when a descendant overflows an intermediate wrapper — e.g.
+      // <figure> inside .method-body inside .section: the wrapper's
+      // getBoundingClientRect() reports its allocated flex box, not the
+      // overflowing figure, so a direct-children union would silently report
+      // FULL while the figure visibly bleeds into the next card. The deep
+      // walk catches it and the badge's verdict matches the staged-fill gate.
+      let l = +Infinity, t = +Infinity, r = -Infinity, b = -Infinity, any = false;
+      const walk = (el) => {
+        if (!el.classList) return;
+        if (el.classList.contains("listen-btn")) return;
+        if (el.classList.contains("dbg-badge"))  return;
+        if (el.classList.contains("dbg-bbox"))   return;
+        const rc = el.getBoundingClientRect();
+        if (rc.width > 0 || rc.height > 0) {
+          l = Math.min(l, rc.left);  t = Math.min(t, rc.top);
+          r = Math.max(r, rc.right); b = Math.max(b, rc.bottom);
+          any = true;
+        }
+        Array.from(el.children).forEach(walk);
+      };
+      Array.from(sec.children).forEach(walk);
+      const content = any ? toLocal({left:l, top:t, right:r, bottom:b,
+                                     width:r-l, height:b-t}) : null;
+      let fullStr = null;
+      if (content && card && card.h > 0) {
+        const fr = (content.y + content.h - card.y) / card.h;
+        let verdict;
+        if (fr > 1.10)       verdict = "OVERFLOW";
+        else if (fr >= 1.00) verdict = "SPILLAGE";
+        else if (fr >= 0.90) verdict = "FULL";
+        else if (fr >= 0.70) verdict = "SPARSE";
+        else                 verdict = "EMPTY";
+        fullStr = `ratio=${(fr * 100).toFixed(1)}%  [${verdict}]`;
+      }
+      const draw = (cls, box, extra) => {
+        if (!box) return;
+        const el = document.createElement("div");
+        el.className = "dbg-bbox " + cls;
+        el.style.left   = box.x + "px";
+        el.style.top    = box.y + "px";
+        el.style.width  = box.w + "px";
+        el.style.height = box.h + "px";
+        const label = document.createElement("div");
+        label.className = "dbg-bbox-label";
+        const tag = cls === "dbg-bbox-card" ? "card"
+                  : cls === "dbg-bbox-figure" ? "figure" : "content";
+        let txt = `${id} ${tag}  x=${box.x} y=${box.y} w=${box.w} h=${box.h}`;
+        if (extra) txt += "  " + extra;
+        label.textContent = txt;
+        el.appendChild(label);
+        poster.appendChild(el);
+      };
+      draw("dbg-bbox-card",    card, null);
+      draw("dbg-bbox-content", content, fullStr);
+      // Per-figure bbox: (x,y,w,h) plus the width ratio against the section
+      // card (w_figure / w_section). The ratio is the lever the staged-fill
+      // loop's figure-sizing tier reasons about, so surface it on-screen too.
+      sec.querySelectorAll("figure").forEach(fig => {
+        const rc = fig.getBoundingClientRect();
+        if (rc.width === 0 && rc.height === 0) return;
+        const box = toLocal(rc);
+        const ratio = card && card.w > 0 ? box.w / card.w : 0;
+        draw("dbg-bbox-figure", box, `ratio=${(ratio * 100).toFixed(1)}% w/w_section`);
+      });
+    });
+  }
+
+  function stampBadges() {
+    clearBadges();
+    // Column badges — slackRatio from the column's contentBox.
+    document.querySelectorAll(".columns > .col").forEach((col, i) => {
+      const cs = getComputedStyle(col);
+      const padT = parseFloat(cs.paddingTop) || 0;
+      const padB = parseFloat(cs.paddingBottom) || 0;
+      const inner = col.clientHeight - padT - padB;
+      let used = 0;
+      const kids = Array.from(col.children).filter(el => !el.classList.contains("dbg-badge"));
+      kids.forEach(el => { used += el.offsetHeight; });
+      // Approximate row-gap contribution.
+      const gap = parseFloat(cs.rowGap || cs.gap) || 0;
+      if (kids.length > 1) used += gap * (kids.length - 1);
+      const slack = inner - used;
+      const ratio = inner > 0 ? slack / inner : 0;
+      const badge = document.createElement("div");
+      badge.className = "dbg-badge dbg-col " + (ratio < -0.02 ? "over" : (ratio <= 0.08 ? "ok" : ""));
+      badge.textContent = `col${i}  used=${Math.round(used)} / ${Math.round(inner)}  slack=${(ratio*100).toFixed(1)}%`;
+      // The .col is currently `display: flex` with no positioning — set it to
+      // relative locally so the absolute badge anchors to the column box.
+      col.style.position = "relative";
+      col.appendChild(badge);
+    });
+    // Section badges — actual offsetHeight, plus estimator delta when available.
+    document.querySelectorAll(".section[data-section]").forEach(sec => {
+      const id = sec.getAttribute("data-section");
+      const actual = sec.offsetHeight;
+      // full_ratio = (y_content - y_section + h_content) / h_section
+      // i.e. how far down the card the content bottom reaches, as a fraction
+      // of the full card height (padding included). Complements `fillRatio`
+      // (which uses the padding box) by accounting for the card's own padding —
+      // useful for spotting cards where content fills the padded region but
+      // the surrounding padding still makes the card look mostly empty.
+      const secRect = sec.getBoundingClientRect();
+      // secRect (and the child rects below) are post-transform SCREEN px, but
+      // `actual` is offsetHeight (untransformed layout px). Recover the stage
+      // scale so the screen-space content bottom can be converted back to
+      // layout px before dividing by `actual` — otherwise fullRatio is off by
+      // the scale factor in a scaled browser window. s===1 in the print view.
+      const posterEl = document.querySelector(".poster");
+      const sBox = posterEl ? posterEl.getBoundingClientRect() : null;
+      const sc = (posterEl && posterEl.offsetWidth) ? sBox.width / posterEl.offsetWidth : 1;
+      let cl = +Infinity, ct = +Infinity, cr = -Infinity, cb = -Infinity, hasContent = false;
+      // Deep walk -- mirrors `check_poster.py slack` so the per-section badge's
+      // fullRatio matches the staged-fill gate even when a descendant overflows
+      // an intermediate wrapper (e.g. <figure> in .method-body in .section).
+      const walk2 = (el) => {
+        if (!el.classList) return;
+        if (el.classList.contains("listen-btn")) return;
+        if (el.classList.contains("dbg-badge"))  return;
+        if (el.classList.contains("dbg-bbox"))   return;
+        const rc = el.getBoundingClientRect();
+        if (rc.width > 0 || rc.height > 0) {
+          cl = Math.min(cl, rc.left);  ct = Math.min(ct, rc.top);
+          cr = Math.max(cr, rc.right); cb = Math.max(cb, rc.bottom);
+          hasContent = true;
+        }
+        Array.from(el.children).forEach(walk2);
+      };
+      Array.from(sec.children).forEach(walk2);
+      const badge = document.createElement("div");
+      badge.className = "dbg-badge dbg-section";
+      let html = `${id}  ${Math.round(actual)}px`;
+      if (hasContent && actual > 0) {
+        const fullRatio = ((cb - secRect.top) / sc) / actual;
+        // Verdict label lives on the content bbox below — keep the
+        // per-section badge compact.
+        html += `  ratio=${(fullRatio * 100).toFixed(1)}%`;
+      }
+      if (estimates && estimates[id] != null) {
+        const est = estimates[id];
+        const delta = Math.round(actual - est);
+        const cls = delta >= 0 ? "dbg-delta-pos" : "dbg-delta-neg";
+        const sign = delta >= 0 ? "+" : "";
+        html += ` <span class="${cls}">est=${est} Δ${sign}${delta}</span>`;
+      }
+      badge.innerHTML = html;
+      sec.appendChild(badge);
+    });
+    stampBboxes();
+  }
+
+  window.__togglePosterDebug = function () {
+    const enabling = !document.body.classList.contains("debug");
+    document.body.classList.toggle("debug");
+    if (enabling) {
+      loadEstimates(() => stampBadges());
+    } else {
+      clearBadges();
+    }
+  };
+
+  // Live-update on resize while debug is active so badge numbers stay honest.
+  let raf = 0;
+  window.addEventListener("resize", () => {
+    if (!document.body.classList.contains("debug")) return;
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(stampBadges);
+  });
+})();
+</script>
+<script>
+// Per-element debug layer (extends the `d`-key overlay) -- FANCY edition.
+// On top of the per-section card/content/figure boxes, draw a rounded,
+// TYPE-COLORED box around each DIRECT child element of every section (figure =
+// violet, list = teal, text = blue, heading = dashed gray), label it with its
+// tag + the whitespace GAP below it, and spotlight the one element that holds
+// the section's slack with a glowing orange box + a "SLACK > GROW" pill -- the
+// growable element the fill loop should target. Mirrors check_poster.py slack's
+// per-element localization. Headings are never the slack element.
+(function () {
+  const S = document.createElement("style");
+  S.textContent = `
+    .dbg-bbox-elem {
+      border: 1.5px solid var(--de-c, rgba(58,110,232,0.88));
+      background: var(--de-fill, rgba(58,110,232,0.06));
+      border-radius: calc(3pt * var(--dbg-scale,1));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22); z-index: 61; }
+    .dbg-bbox-elem.de-fig  { --de-c: rgba(150,70,210,0.92); --de-fill: rgba(150,70,210,0.07); }
+    .dbg-bbox-elem.de-head { --de-c: rgba(120,130,152,0.72); --de-fill: rgba(120,130,152,0.03); border-style: dashed; }
+    .dbg-bbox-elem.de-list { --de-c: rgba(16,160,148,0.90); --de-fill: rgba(16,160,148,0.06); }
+    .dbg-bbox-elem.de-text { --de-c: rgba(58,110,232,0.88); --de-fill: rgba(58,110,232,0.06); }
+    .dbg-elem-label {
+      position: absolute; left: calc(-1.5pt * var(--dbg-scale,1)); top: calc(-1.5pt * var(--dbg-scale,1));
+      font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+      font-size: calc(5.4pt * var(--dbg-scale,1)); font-weight: 800; line-height: 1.15;
+      padding: calc(1pt * var(--dbg-scale,1)) calc(3.5pt * var(--dbg-scale,1));
+      white-space: nowrap; color: #fff; background: var(--de-c, rgba(58,110,232,0.95));
+      border-radius: calc(3pt * var(--dbg-scale,1)) calc(3pt * var(--dbg-scale,1)) calc(3pt * var(--dbg-scale,1)) 0;
+      box-shadow: 0 calc(1pt * var(--dbg-scale,1)) calc(3pt * var(--dbg-scale,1)) rgba(0,0,0,0.28);
+      letter-spacing: .02em; }
+    .dbg-bbox-elem.dbg-slack {
+      border: calc(3pt * var(--dbg-scale,1)) solid rgba(232,120,0,0.98);
+      --de-fill: rgba(255,178,38,0.13); background: var(--de-fill);
+      box-shadow: 0 0 calc(11pt * var(--dbg-scale,1)) rgba(232,120,0,0.5),
+                  inset 0 0 0 1px rgba(255,255,255,0.3); z-index: 63; }
+    .dbg-bbox-elem.dbg-slack .dbg-elem-label { background: rgba(232,120,0,0.98); }
+    .dbg-slack-pill {
+      position: absolute; right: calc(2pt * var(--dbg-scale,1)); bottom: calc(2pt * var(--dbg-scale,1));
+      font-family: ui-monospace, monospace; font-size: calc(5.4pt * var(--dbg-scale,1)); font-weight: 900;
+      padding: calc(1.5pt * var(--dbg-scale,1)) calc(4.5pt * var(--dbg-scale,1));
+      background: rgba(232,120,0,0.98); color: #fff; border-radius: 99pt;
+      box-shadow: 0 calc(1pt * var(--dbg-scale,1)) calc(4pt * var(--dbg-scale,1)) rgba(0,0,0,0.32);
+      white-space: nowrap; z-index: 64; letter-spacing: .03em; }
+    body:not(.debug) .dbg-bbox-elem, body:not(.debug) .dbg-slack-pill { display: none; }
+  `;
+  document.head.appendChild(S);
+
+  function stampElements() {
+    const poster = document.querySelector(".poster");
+    if (!poster) return;
+    poster.querySelectorAll(".dbg-bbox-elem").forEach(n => n.remove());
+    const pr = poster.getBoundingClientRect();
+    const s  = poster.offsetWidth ? pr.width / poster.offsetWidth : 1;
+    const toLocal = r => ({ x: (r.left - pr.left) / s, y: (r.top - pr.top) / s,
+                            w: r.width / s, h: r.height / s });
+    document.querySelectorAll(".section[data-section]").forEach(sec => {
+      const kids = Array.from(sec.children).filter(k => k.classList
+        && !k.classList.contains("listen-btn") && !k.classList.contains("dbg-badge")
+        && !k.classList.contains("dbg-bbox") && !k.classList.contains("dbg-bbox-elem"));
+      const boxes = kids.map(k => ({
+        tag: k.tagName.toLowerCase(), box: toLocal(k.getBoundingClientRect()),
+        isFig: (k.tagName === "FIGURE" || !!k.querySelector("figure")),
+      })).filter(b => b.box.w > 1 && b.box.h > 1);
+      boxes.sort((a, b) => a.box.y - b.box.y);
+      const padB = parseFloat(getComputedStyle(sec).paddingBottom) || 0;
+      const sL = toLocal(sec.getBoundingClientRect());
+      const cardBottom = sL.y + sL.h - padB;
+      let maxGap = -1, maxIdx = -1;
+      boxes.forEach((b, i) => {
+        const bot = b.box.y + b.box.h;
+        b.gap = Math.max(0, (i + 1 < boxes.length) ? boxes[i + 1].box.y - bot : cardBottom - bot);
+        if (!["h1", "h2", "h3"].includes(b.tag) && b.gap > maxGap) { maxGap = b.gap; maxIdx = i; }
+      });
+      boxes.forEach((b, i) => {
+        const isHead = ["h1", "h2", "h3"].includes(b.tag);
+        const typeCls = b.isFig ? "de-fig" : isHead ? "de-head"
+                       : (b.tag === "ul" || b.tag === "ol") ? "de-list" : "de-text";
+        const d = document.createElement("div");
+        d.className = "dbg-bbox dbg-bbox-elem " + typeCls + (i === maxIdx ? " dbg-slack" : "");
+        d.style.left = b.box.x + "px"; d.style.top = b.box.y + "px";
+        d.style.width = b.box.w + "px"; d.style.height = b.box.h + "px";
+        const L = document.createElement("div");
+        L.className = "dbg-elem-label";
+        L.textContent = b.tag + "  ·  gap " + Math.round(b.gap) + "px";
+        d.appendChild(L);
+        if (i === maxIdx) {
+          const pill = document.createElement("div");
+          pill.className = "dbg-slack-pill";
+          pill.textContent = b.isFig ? "SLACK ▸ ENLARGE FIGURE" : "SLACK ▸ GROW THIS";
+          d.appendChild(pill);
+        }
+        poster.appendChild(d);
+      });
+    });
+  }
+
+  const orig = window.__togglePosterDebug;
+  window.__togglePosterDebug = function () {
+    if (orig) orig();
+    if (document.body.classList.contains("debug")) setTimeout(stampElements, 40);
+    else document.querySelectorAll(".dbg-bbox-elem").forEach(n => n.remove());
+  };
+})();
+</script>
+<script>
+// Resize each <figure> so its inner <img> fills the figure box edge-to-edge
+// (no letterboxing). See poster_full_template for the full rationale.
+(function () {
+  function fit(img) {
+    const fig = img.closest('figure');
+    if (!fig) return;
+    const nw = img.naturalWidth, nh = img.naturalHeight;
+    if (!nw || !nh) return;
+    const cap = fig.querySelector('figcaption');
+    const section = fig.closest('.section');
+    // Collapse the figure to a sliver BEFORE measuring, so a grow section
+    // (flex: 1 1 auto) settles to its stable flex-allocated height instead of
+    // ballooning around the full-size image -- otherwise section.bottom is
+    // circular and over-reports the budget, the image isn't shrunk enough, and
+    // its caption overflows the figure box where `figure{overflow:hidden}`
+    // clips it. Clearing alignSelf lets the collapsed figure stretch to the
+    // section's full content width (not shrink-wrap to the caption), so availW
+    // is the true available width. See poster_full_template for the full
+    // rationale.
+    img.style.width = '1px'; img.style.height = '1px'; img.style.flex = '0 0 auto';
+    fig.style.maxWidth = ''; fig.style.maxHeight = '';
+    // Reset the pinned width/height/flex too (see the fit() commit below).
+    // The pin shrinks the figure box to the painted-image AR; if a leftover
+    // pin from a previous pass survives this collapse step, the new
+    // `figRect = fig.getBoundingClientRect()` reads the old pin (not the
+    // true available width), and fit() locks the figure at the stale size
+    // even after the column geometry changes.
+    fig.style.width = ''; fig.style.height = ''; fig.style.flex = '';
+    fig.style.alignSelf = '';
+    const figRect = fig.getBoundingClientRect();
+    const availW = figRect.width;
+    let budgetH = figRect.height;
+    if (section) {
+      const scs = getComputedStyle(section);
+      const sBottom = section.getBoundingClientRect().bottom
+                    - (parseFloat(scs.paddingBottom) || 0)
+                    - (parseFloat(scs.borderBottomWidth) || 0);
+      budgetH = sBottom - figRect.top;
+    }
+    // Figure budget floor (generalized, applies to ALL section figures,
+    // not just Method). The fit() collapse-pass shrinks the figure to 1px
+    // to measure available space -- but for a section that doesn't carry
+    // `.grow` (e.g., Key Result sitting below a tall table), the section
+    // auto-height collapses with the figure, dropping budgetH to ~caption-
+    // only. The pin step then locks the figure at a ~15x60px stripe whose
+    // figcaption wraps to one-character-per-line. Symptom: invisible
+    // figure with vertically-compressed caption.
+    //
+    // Floor the budget at MIN_FIG_BUDGET (24% canvas for Method, 15% for
+    // others) so the figure has a guaranteed minimum vertical slot, CAP-
+    // by-column-siblings so it can't overflow the section bottom.
+    // .method-horizontal exempt (row layout already gives tall slot).
+    const inMethod = fig.parentElement
+                  && fig.parentElement.classList
+                  && fig.parentElement.classList.contains('method-body');
+    const inMethodRow = inMethod
+                  && fig.parentElement.classList.contains('method-horizontal');
+    if (!inMethodRow && section) {
+      const poster = section.closest('.poster');
+      const canvasH = poster ? poster.clientHeight : 3456;
+      const FIG_MIN_RATIO = {{FIG_MIN_RATIO}};
+      // HARD floor: a figure never shrinks below FIG_MIN_RATIO fill on its
+      // wider axis (width-fill height for non-Method; 24% canvas for Method).
+      // NO column cap: a too-tight column OVERFLOWS instead, and the fill loop
+      // resolves that by trimming text -- figures are immovable.
+      let MIN_FIG_BUDGET = inMethod ? 0.24 * canvasH
+                         : Math.min(0.9 * canvasH, FIG_MIN_RATIO * availW * nh / nw);
+      if (budgetH < MIN_FIG_BUDGET) budgetH = MIN_FIG_BUDGET;
+    }
+    if (availW <= 0 || budgetH <= 0) return;
+    const arImg = nw / nh;
+    // Width-OR-height sizing: a figure should fill 80-100% of the section on
+    // at least one axis -- either width OR the vertical room flexbox handed
+    // it, not necessarily both. Plain AR-preserving contain fit: start
+    // full-width; if too tall for the room, shrink to fit height instead.
+    //
+    // A one-line caption at full column width wraps to two once the image is
+    // pinned narrower, so caption room can't be reserved up front (doing so
+    // under-reserves it and the second line gets clipped). Measure the
+    // caption ONCE at availW (the full slot width), pin the AR-preserving
+    // image, then RE-MEASURE the caption at the pinned width to set the true
+    // figure box height. We deliberately do NOT iterate `width <-> caption-
+    // height`: if we did, a narrow w would force the caption to wrap into
+    // more lines, which ate into availH, which shrank w further, which
+    // wrapped the caption taller again -- a spiral that converged to a
+    // ~100px-wide stamp with a 6-line caption. See poster_full_template
+    // commentary for the longer rationale.
+    const capGap = cap ? (parseFloat(getComputedStyle(cap).marginTop) || 0) : 0;
+    let capH = 0;
+    if (cap) {
+      // Measure-pass: width = availW, image collapsed.
+      img.style.width = '1px'; img.style.height = '1px'; img.style.flex = '0 0 auto';
+      fig.style.maxWidth = availW + 'px'; fig.style.maxHeight = '';
+      const cs = getComputedStyle(cap);
+      capH = cap.getBoundingClientRect().height + (parseFloat(cs.marginBottom) || 0);
+    }
+    const availH = Math.max(1, budgetH - capH - capGap - 2);
+    // AR-preserving contain fit: start at full width; if too tall, shrink to availH.
+    let w = availW, h = w / arImg;
+    if (h > availH) { h = availH; w = h * arImg; }
+    // Tier-5 image-scale override (see poster_full_template for rationale).
+    const raw = parseFloat(img.getAttribute('data-fill-scale'));
+    const scale = Number.isFinite(raw) ? Math.min(1.0, Math.max(0.8, raw)) : 1.0;
+    w *= scale; h *= scale;
+    img.style.width  = w + 'px';
+    img.style.height = h + 'px';
+    img.style.flex   = '0 0 auto';
+    // Pin the figure box to the AR-preserving width, then RE-MEASURE the
+    // caption at that pinned width. The caption may wrap taller inside the
+    // narrower box than it did at availW; without this re-measure the figure
+    // box reserves too little height and the caption visibly bleeds past the
+    // bottom border (which `figure { overflow: visible }` allows) -- the
+    // section's deep-walk content union then reads it as content past the
+    // section border (SPILLAGE / OVERFLOW) even though the image sits
+    // cleanly inside the card.
+    fig.style.maxWidth  = w + 'px';
+    fig.style.maxHeight = '';
+    fig.style.width     = w + 'px';
+    fig.style.height    = '';
+    fig.style.flex      = '0 0 auto';
+    let trueCapH = capH;
+    if (cap) {
+      const cs = getComputedStyle(cap);
+      trueCapH = cap.getBoundingClientRect().height
+               + (parseFloat(cs.marginBottom) || 0);
+    }
+    const figH = h + trueCapH + capGap + 2;
+    fig.style.maxHeight = figH + 'px';
+    fig.style.height    = figH + 'px';
+    // (Width/height/flex pinning happened above with trueCapH; nothing left
+    // to do here. Pinning matters because `figure { flex: 1 1 auto }` inside
+    // a column-flex parent lets the box stretch wider than the AR-preserving
+    // slot, and `figure img { width:100%; height:100%; max-height:100% }`
+    // then clamps the img to the stretched parent -- `object-fit: contain`
+    // paints a letterboxed image at ~50% on both axes, tripping FIG/NARROW.)
+    fig.style.alignSelf = 'center';
+  }
+  function fitAll() {
+    // Scope explicitly to figures INSIDE a section card (the only place a
+    // method/motivation figure lives). Excludes titlebar QR tiles — which are
+    // also `<figure>` elements but must keep their fixed CSS size; the measure
+    // pass below sets `img.style.width = '1px'` inline, which would otherwise
+    // collapse the QRs to ~48px (an inline style beats any CSS rule).
+    document.querySelectorAll('.section figure img').forEach(img => {
+      if (img.complete && img.naturalWidth) fit(img);
+      else img.addEventListener('load', () => relayout(), { once: true });
+    });
+  }
+  // `fit()` reads geometry via getBoundingClientRect(), which an ancestor
+  // `transform: scale()` would distort. So every relayout runs in the UNSCALED
+  // state: the #poster-stage controller clears its transform, we fit figures at
+  // true 1:1 size, then it re-applies the scale. __fitPosterStage() is defined
+  // by the controller IIFE at the end of <body>; if it hasn't registered yet
+  // (first synchronous call), just fit directly.
+  function relayout() {
+    if (window.__fitPosterStage) window.__fitPosterStage(fitAll);
+    else fitAll();
+  }
+  if (document.readyState === 'complete') relayout();
+  else window.addEventListener('load', relayout);
+  let raf = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(relayout);
+  });
+})();
+</script>
+<script>
+// #poster-stage controller: scale the WHOLE poster (box + content together)
+// to fit the window, in both normal and fullscreen view. This is what makes
+// the on-screen preview match the printed PDF at any window size.
+//
+// The poster lays out at its true fixed canvas (5760x3456px = 60x36in @96ppi).
+// We compute scale = min(winW/5760, winH/3456) and apply `transform: scale()`
+// to .poster, sizing #poster-stage to the scaled footprint so the page centers
+// with no scrollbars. Because the transform scales the rendered element, fonts,
+// padding, figures — everything — shrink as one locked unit; no reflow, so the
+// layout stays pixel-identical to the PDF.
+//
+// Print-safe by construction: under Chromium print emulation the viewport IS
+// 5760x3456, so scale === 1 (identity). render_poster.py / check_poster.py see
+// the untransformed canvas and the PDF/PNG export is byte-for-byte unchanged.
+// render_poster.py's own 0.35x thumbnail transform is applied AFTER this (no
+// resize event fires to clobber it), so the PNG is unaffected too.
+(function () {
+  const CANVAS_W = 5760, CANVAS_H = 3456;  // 60x36in at 96ppi
+  const stage  = document.getElementById('poster-stage');
+  const poster = stage && stage.querySelector('.poster');
+  if (!stage || !poster) return;
+
+  let applying = false;
+  // Apply the fit. Optional `beforeScale` callback runs while the poster is
+  // UNSCALED (transform cleared) — figure-fitting needs true geometry. We then
+  // re-apply the scale. The `applying` guard stops the resize listener from
+  // re-entering when beforeScale itself triggers a synchronous reflow.
+  function apply(beforeScale) {
+    if (applying) return;
+    applying = true;
+    try {
+      poster.style.transform = 'none';
+      if (typeof beforeScale === 'function') beforeScale();
+      const scale = Math.min(
+        window.innerWidth  / CANVAS_W,
+        window.innerHeight / CANVAS_H,
+      );
+      poster.style.transform = 'scale(' + scale + ')';
+      stage.style.width  = (CANVAS_W * scale) + 'px';
+      stage.style.height = (CANVAS_H * scale) + 'px';
+    } finally {
+      applying = false;
+    }
+  }
+  // Exposed so the figure-fit IIFE and the fullscreen handler drive a single
+  // code path. They pass their fitAll() as `beforeScale` so figures are sized
+  // unscaled, then the poster is re-scaled in one shot.
+  window.__fitPosterStage = apply;
+
+  apply();
+  let raf = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => apply());
+  });
+})();
+</script>
+</body>
+</html>

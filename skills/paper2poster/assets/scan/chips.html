@@ -1,0 +1,37 @@
+<style>
+  /* Scan-to-Read variant: CHIPS — the resource pills ARE the QR legend, and the QR code(s)
+     sit INSIDE one rounded accent-soft card (the "pill" frame), centered. No left/right split
+     and no Paper/Code repeated on both sides. Shared invariants repeated so the partial is
+     self-contained. */
+  .section[data-section="scan-to-read"] h2 { position: static !important; transform: none !important; background: none !important; max-width: none !important; display: block; margin: 0; padding: 0; }
+  .section[data-section="scan-to-read"] .qr-img { background-color: #fff; background-size: contain; background-repeat: no-repeat; background-position: center; background-origin: content-box; padding: 8pt; border: 1px solid #e5e5e0; border-radius: 9pt; image-rendering: pixelated; aspect-ratio: 1 / 1; }
+  .section[data-section="scan-to-read"] .tq[data-qr=""],
+  .section[data-section="scan-to-read"] .tq[data-qr*="{{"] { display: none !important; }
+  .section[data-section="scan-to-read"]:not(:has(.tq:not([data-qr=""]):not([data-qr*="{{"]))) { display: none; }
+  body:has(.titlebar img.qr-img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"],
+  body:has(.titlebar .qr-tile .chip.qr img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"] { display: none; }
+  /* chips layout — centered column: heading + one accent-soft card wrapping the labelled QR(s) */
+  .section[data-section="scan-to-read"] .scan-chips { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 auto; min-height: 0; gap: 18pt; }
+  .section[data-section="scan-to-read"] .scan-chips h2 { font-size: 40pt; line-height: 1.05; color: var(--accent); text-align: center; }
+  .section[data-section="scan-to-read"] .scan-chips .scan-chip-card { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 44pt; min-height: 0; background: var(--accent-soft); border: 2pt solid var(--accent); border-radius: 18pt; padding: 24pt 38pt; }
+  .section[data-section="scan-to-read"] .scan-chips .tq { display: flex; flex-direction: column; align-items: center; gap: 12pt; min-height: 0; }
+  .section[data-section="scan-to-read"] .scan-chips .scan-chip { background: var(--accent); color: var(--accent-ink, #fff); border-radius: 999pt; padding: 5pt 24pt; font-size: 26pt; font-weight: 700; line-height: 1.2; }
+  .section[data-section="scan-to-read"] .scan-chips .qr-img { height: 250pt; max-height: 100%; width: auto; }
+
+  /* --- shared scan polish (posterskill-inspired: QR card depth + accent caption pill) --- */
+  .section[data-section="scan-to-read"] .qr-img { border-radius: 13pt !important; box-shadow: 0 4pt 16pt rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.06); padding: 10pt !important; }
+  .section[data-section="scan-to-read"] .tq { gap: 12pt !important; }
+  /* :not(.scan-chip) — the chip label IS a .tq span and already has white text
+     on the accent pill; without the guard this !important accent color made it
+     accent-on-accent (invisible). Applies only to non-chip caption spans. */
+  .section[data-section="scan-to-read"] .tq span:not(.scan-chip) { background: var(--accent-soft); color: var(--accent) !important; font-weight: 800 !important; padding: 4pt 17pt; border-radius: 999pt; letter-spacing: 0.02em; }
+</style>
+<div class="section" data-section="scan-to-read">
+  <div class="scan-qr scan-chips">
+    <h2>Scan to Read</h2>
+    <div class="scan-chip-card">
+      <div class="tq" data-qr="{{QR_PAPER}}"><span class="scan-chip">Paper</span><div class="qr-img" style="background-image:url('{{QR_PAPER}}')"></div></div>
+      <div class="tq" data-qr="{{QR_CODE}}"><span class="scan-chip">Code</span><div class="qr-img" style="background-image:url('{{QR_CODE}}')"></div></div>
+    </div>
+  </div>
+</div>

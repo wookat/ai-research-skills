@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.ruff_cache/
+.omc/
+.DS_Store
+
+# Per-run outputs (created by --outdir default)
+output/

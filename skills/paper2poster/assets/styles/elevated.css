@@ -1,0 +1,12 @@
+/* elevated.css — 'Elevated Shadow' body-block style (section card + h2). Adapts the
+   gallery block to the real poster (.section padding/flex unchanged, h2 60pt).
+   Theme/header ride the SOLID defaults (flat white chips) via --tb-chip-shadow. */
+:root { --fig-img-radius: 4px; --tb-chip-shadow: none; }
+.section {
+    position: relative; padding: 32pt; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  background:#fff; border:1px solid #eeeeee; border-radius:14pt; box-shadow:0 8pt 22pt rgba(20,30,70,0.14);
+}
+.section h2 {
+  margin: 0 0 0.45em 0; font-size: 60pt; line-height: 1.1; font-weight: 800;
+  color:var(--accent); border-bottom:2px solid color-mix(in srgb, var(--accent) 22%, transparent); padding-bottom:0.18em;
+}

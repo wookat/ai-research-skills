@@ -1,0 +1,131 @@
+<!-- header v2 — institution logos (left) · title (center) · venue (right).
+     Mirror of v1; same finalized 3-zone design + --tb-* theme contract. Root keeps
+     class="titlebar" + data-section="title". Self-contained <style>; SOLID look is
+     the baked default. PLACEHOLDERS: {{TITLE}} {{AUTHORS}} {{AUTHOR_LEGEND}}
+     {{CONTACT}} {{VENUE_NAME}} {{VENUE_YEAR}} {{VENUE_LOGO}} {{LOGO_1}}..{{LOGO_6}}. -->
+<style>
+  .titlebar {
+    flex: 0 0 auto;
+    position: relative;
+    background: var(--tb-bg, var(--accent));
+    color: var(--tb-fg, #ffffff);
+    border: var(--tb-border, none);
+    border-radius: var(--tb-radius, 12pt);
+    box-shadow: var(--tb-shadow, 0 3px 12px rgba(0, 0, 0, 0.18));
+    padding: 28pt 48pt;
+  }
+  /* v2: institutions | title | venue (mirror of v1). align-items:stretch -> side
+     zones equal the title height and their logos fill that height. */
+  .titlebar.hv-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 3fr) minmax(0, 1.45fr);
+    align-items: stretch;
+    gap: 40pt;
+  }
+  .titlebar .title-block { min-width: 0; text-align: center; }
+  .titlebar h1 {
+    margin: 0 0 0.2em 0;
+    font-size: 84pt;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    font-weight: 800;
+    color: var(--tb-title-fg, #ffffff);
+  }
+  .titlebar .authors { font-size: 40pt; line-height: 1.3; color: var(--tb-fg, #ffffff); }
+  .titlebar .author-legend {
+    margin-top: 0.16em;
+    font-size: 28pt;
+    letter-spacing: 0.02em;
+    color: var(--tb-sub-fg, rgba(255, 255, 255, 0.82));
+  }
+  .titlebar .author-legend:empty { display: none; }
+  .titlebar .authors sup,
+  .titlebar .author-legend sup,
+  .titlebar .contact sup { font-size: 0.62em; vertical-align: super; line-height: 0; }
+  .titlebar .contact { display: none; }
+
+  .titlebar .chip {
+    background: var(--tb-chip-bg, #ffffff);
+    border-radius: 8pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--tb-chip-shadow, 0 2px 8px rgba(0, 0, 0, 0.18));
+  }
+  .titlebar .venue-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .titlebar .venue-mark .chip.conf {
+    flex: 0 0 auto;
+    padding: 14pt 24pt;
+    min-width: 6em;
+  }
+  .titlebar .venue-mark .chip.conf img { height: 160pt; width: auto; max-width: 620pt; object-fit: contain; display: block; }
+  .titlebar .chip.conf img[src=""],
+  .titlebar .chip.conf img:not([src]),
+  .titlebar .chip.conf img[src*="{{"] { display: none; }
+  .titlebar .chip.conf .vtext {
+    display: none;
+    font-size: 64pt;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    color: var(--tb-conf-fg, var(--accent));
+  }
+  .titlebar .chip.conf:not(:has(img[src]:not([src=""]):not([src*="{{"]))) .vtext { display: inline; }
+  .titlebar .logo-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    align-content: space-evenly;
+    gap: 12pt 16pt;
+  }
+  .titlebar .logo-grid .chip { height: 132pt; padding: 8pt 16pt; }
+  .titlebar .logo-grid .chip img { height: 140pt; width: auto; max-width: 300pt; object-fit: contain; display: block; }
+  /* (Header QR tiles removed — v1-v4 never show a titlebar QR; it lives in the Scan-to-Read section. Only v5 has a header QR.) */
+  .titlebar .logo-grid .chip:has(img[src=""]),
+  .titlebar .logo-grid .chip:has(img[src*="{{"]) { display: none; }
+
+  .titlebar .listen-all {
+    position: absolute;
+    bottom: 16pt;
+    right: 48pt;
+    z-index: 5;
+    font-size: 26pt;
+    font-weight: 600;
+    color: var(--tb-fg, #ffffff);
+    background: transparent;
+    border: 1.5pt solid currentColor;
+    border-radius: 999px;
+    padding: 5pt 18pt;
+    cursor: pointer;
+  }
+</style>
+
+<header class="titlebar hv-2" data-section="title" data-header="v2">
+  <div class="logo-grid" data-section="inst-logos">
+    <span class="chip"><img src="{{LOGO_1}}" alt="" onerror="this.closest('.chip').remove()"></span>
+    <span class="chip"><img src="{{LOGO_2}}" alt="" onerror="this.closest('.chip').remove()"></span>
+    <span class="chip"><img src="{{LOGO_3}}" alt="" onerror="this.closest('.chip').remove()"></span>
+    <span class="chip"><img src="{{LOGO_4}}" alt="" onerror="this.closest('.chip').remove()"></span>
+    <span class="chip"><img src="{{LOGO_5}}" alt="" onerror="this.closest('.chip').remove()"></span>
+    <span class="chip"><img src="{{LOGO_6}}" alt="" onerror="this.closest('.chip').remove()"></span>
+    <!-- v1-v4 carry NO header QR: the QR always renders in the standalone scan-to-read section. Only v5 keeps a titlebar QR. -->
+  </div>
+  <div class="title-block" data-section="title">
+    <h1>{{TITLE}}</h1>
+    <div class="authors">{{AUTHORS}}</div>
+    <div class="author-legend">{{AUTHOR_LEGEND}}</div>
+    <div class="contact">{{CONTACT}}</div>
+  </div>
+  <div class="venue-mark" data-section="venue-logo">
+    <span class="chip conf">
+      <img src="{{VENUE_LOGO}}" alt="" onerror="this.remove()">
+      <span class="vtext">{{VENUE_NAME}} {{VENUE_YEAR}}</span>
+    </span>
+  </div>
+  <button class="listen-all" data-listen-all>Full Listen</button>
+</header>

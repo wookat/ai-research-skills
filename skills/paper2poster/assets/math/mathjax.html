@@ -1,0 +1,35 @@
+<!-- MathJax v3 for inline equations. The <script> src points at the
+     jsdelivr CDN, but the paper2poster renderer (scripts/utils/render.py
+     + html2pptx) intercepts the `**/tex-svg.js` request and fulfills it
+     from the skill's bundled `assets/mathjax/tex-svg.js`, so equations
+     typeset deterministically even on offline/restricted hosts (no CORS
+     flakiness). The CDN URL is kept as a transparent fallback when the
+     page is opened outside the renderer with network access. -->
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      packages: {'[+]': ['ams']}
+    },
+        svg: { fontCache: 'global' },
+    // Stamp each rendered <mjx-container> with the original TeX source
+    // and a display-flag attribute. html2pptx picks these up and emits
+    // native PowerPoint OMML equations (Insert→Equation editable math)
+    // instead of letting the SVG output be rasterized as a flat image.
+    startup: {
+      ready: () => {
+        MathJax.startup.defaultReady();
+        MathJax.startup.promise.then(() => {
+          for (const m of MathJax.startup.document.math) {
+            if (m.typesetRoot) {
+              m.typesetRoot.setAttribute('data-tex', m.math);
+              m.typesetRoot.setAttribute('data-display', m.display ? '1' : '0');
+            }
+          }
+        });
+      }
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>

@@ -1,0 +1,2 @@
+# Free, no-API-key TTS backend for narration audio (generate_audio.py default)
+edge-tts>=7.0

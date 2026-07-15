@@ -1,0 +1,159 @@
+<!-- header v5 — "classic": venue badge (TEXT, left) · title (center) · institution
+     logos + paper/code QR tiles together (right). A faithful, --tb-*-themed port of
+     the ORIGINAL monolithic titlebar (the pre-decouple look the user asked to keep):
+     left zone is TEXT ONLY (no conference logo), the right zone stacks the institute
+     logos over the Paper/Code QR tiles. This is the ONE header that carries the QR in
+     the titlebar — the other variants (v1–v4) put the QR in the Takeaway section, so
+     when v5 is chosen the layout's Takeaway QR should be omitted to avoid a duplicate.
+     Root keeps class="titlebar" + data-section="title". Self-contained <style>; SOLID
+     look is the baked default; framed/simple re-theme via --tb-* in :root.
+     PLACEHOLDERS: {{VENUE_NAME}} {{VENUE_YEAR}} {{VENUE_TAG}} {{VENUE_LINK}}
+       {{TITLE}} {{AUTHORS}} {{AUTHOR_LEGEND}} {{CONTACT}}
+       {{LOGO_1}}..{{LOGO_6}} (institutions; empties auto-hide)
+       {{HDR_QR_PAPER}} {{HDR_QR_CODE}} (qr/{paper,code}.png; each tile auto-hides if absent). -->
+<style>
+  .titlebar {
+    flex: 0 0 auto;
+    position: relative;
+    background: var(--tb-bg, var(--accent));
+    color: var(--tb-fg, #ffffff);
+    border: var(--tb-border, none);
+    border-radius: var(--tb-radius, 12pt);
+    box-shadow: var(--tb-shadow, 0 3px 12px rgba(0, 0, 0, 0.18));
+    padding: 32pt 56pt;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 48pt;
+  }
+  .titlebar .title-block { text-align: center; min-width: 0; }
+  .titlebar h1 {
+    margin: 0 0 0.25em 0;
+    font-size: 92pt;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    font-weight: 800;
+    color: var(--tb-title-fg, #ffffff);
+  }
+  .titlebar .authors { font-size: 44pt; color: var(--tb-fg, #ffffff); opacity: 0.95; }
+  .titlebar .contact { display: none; }
+  .titlebar .author-legend {
+    margin-top: 0.16em;
+    font-size: 30pt;
+    color: var(--tb-sub-fg, rgba(255, 255, 255, 0.78));
+    letter-spacing: 0.02em;
+  }
+  .titlebar .author-legend:empty { display: none; }
+  .titlebar .authors sup,
+  .titlebar .author-legend sup,
+  .titlebar .contact sup { font-size: 0.65em; vertical-align: super; line-height: 0; }
+
+  /* LEFT: venue badge — TEXT ONLY (VENUE / YEAR / TAG), hairline divider on the right. */
+  .titlebar .venue-badge {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding-right: 48pt;
+    border-right: 2px solid var(--tb-divider, rgba(255, 255, 255, 0.35));
+    min-width: 4em;
+  }
+  .titlebar .venue-badge .vb-venue {
+    font-size: 88pt; font-weight: 800; line-height: 1; letter-spacing: -0.01em;
+    color: var(--tb-conf-fg, var(--tb-title-fg, #ffffff));
+  }
+  .titlebar .venue-badge .vb-year { font-size: 44pt; font-weight: 600; opacity: 0.9; margin-top: 0.15em; letter-spacing: 0.08em; }
+  .titlebar .venue-badge .vb-tag {
+    font-size: 24pt; font-weight: 700; margin-top: 0.45em;
+    letter-spacing: 0.18em; opacity: 0.85; text-transform: uppercase;
+  }
+  .titlebar .venue-badge .vb-venue:empty,
+  .titlebar .venue-badge .vb-year:empty,
+  .titlebar .venue-badge .vb-tag:empty { display: none; }
+  .titlebar .venue-badge:not(:has(.vb-venue:not(:empty))):not(:has(.vb-year:not(:empty))) { display: none; }
+  .titlebar .vb-link {
+    color: inherit; text-decoration: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .titlebar .vb-link[href=""],
+  .titlebar .vb-link:not([href]) { pointer-events: none; cursor: default; }
+
+  /* RIGHT zone: institute logos (top row) + Paper/Code QR tiles (bottom row),
+     together. Each row auto-hides independently when empty. */
+  .titlebar .right-zone { display: flex; flex-direction: column; align-items: center; gap: 18pt; }
+  .titlebar .logo-block {
+    display: flex; flex-direction: row; align-items: center; justify-content: center;
+    gap: 14pt; flex-wrap: wrap;
+  }
+  .titlebar .logo-block .logo {
+    height: 110pt; width: auto; max-width: 200pt; flex-shrink: 0;
+    background: var(--tb-chip-bg, #ffffff); padding: 10pt 14pt; border-radius: 8pt;
+    box-shadow: var(--tb-chip-shadow, 0 2px 8px rgba(0, 0, 0, 0.18)); object-fit: contain; display: block;
+  }
+  .titlebar .logo-block .logo:not([src]),
+  .titlebar .logo-block .logo[src=""],
+  .titlebar .logo-block .logo[src*="{{"] { display: none; }
+  .titlebar .logo-block:not(:has(.logo[src]:not([src=""]):not([src*="{{"]))) { display: none; }
+
+  .titlebar .qr-block {
+    display: flex; flex-direction: row; align-items: flex-start; justify-content: center;
+    gap: 22pt; flex-wrap: nowrap;
+  }
+  .titlebar .qr-block .qr { display: flex; flex-direction: column; align-items: center; margin: 0; gap: 6pt; flex-shrink: 0; }
+  .titlebar .qr-block .qr-img {
+    width: 170pt; height: 170pt; background: var(--tb-chip-bg, #ffffff);
+    padding: 9pt; border-radius: 9pt; box-shadow: var(--tb-chip-shadow, 0 2px 10px rgba(0, 0, 0, 0.22));
+    object-fit: contain; display: block;
+  }
+  .titlebar .qr-block .qr-label {
+    font-size: 24pt; opacity: 0.95; letter-spacing: 0.04em; font-weight: 600;
+    color: var(--tb-fg, #ffffff); font-style: normal;
+  }
+  .titlebar .qr-block .qr:has(.qr-img:not([src])),
+  .titlebar .qr-block .qr:has(.qr-img[src=""]),
+  .titlebar .qr-block .qr:has(.qr-img[src*="{{"]) { display: none; }
+  .titlebar .qr-block:not(:has(.qr-img[src]:not([src=""]):not([src*="{{"]))) { display: none; }
+
+  .titlebar .listen-all {
+    position: absolute; bottom: 16pt; left: 56pt; z-index: 5;
+    font-size: 26pt; font-weight: 600; color: var(--tb-fg, #ffffff);
+    background: transparent; border: 1.5pt solid currentColor; border-radius: 999px;
+    padding: 5pt 18pt; cursor: pointer;
+  }
+</style>
+
+<header class="titlebar hv-5" data-section="title" data-header="v5">
+  <div class="venue-badge" data-section="venue-logo">
+    <a class="vb-link" href="{{VENUE_LINK}}" target="_blank" rel="noopener">
+      <div class="vb-venue">{{VENUE_NAME}}</div>
+      <div class="vb-year">{{VENUE_YEAR}}</div>
+      <div class="vb-tag">{{VENUE_TAG}}</div>
+    </a>
+  </div>
+  <div class="title-block" data-section="title">
+    <h1>{{TITLE}}</h1>
+    <div class="authors">{{AUTHORS}}</div>
+    <div class="author-legend">{{AUTHOR_LEGEND}}</div>
+    <div class="contact">{{CONTACT}}</div>
+  </div>
+  <div class="right-zone" data-section="inst-logos">
+    <div class="logo-block">
+      <img class="logo" src="{{LOGO_1}}" alt="" onerror="this.remove()">
+      <img class="logo" src="{{LOGO_2}}" alt="" onerror="this.remove()">
+      <img class="logo" src="{{LOGO_3}}" alt="" onerror="this.remove()">
+      <img class="logo" src="{{LOGO_4}}" alt="" onerror="this.remove()">
+      <img class="logo" src="{{LOGO_5}}" alt="" onerror="this.remove()">
+      <img class="logo" src="{{LOGO_6}}" alt="" onerror="this.remove()">
+    </div>
+    <div class="qr-block">
+      <figure class="qr">
+        <img class="qr-img" src="{{HDR_QR_PAPER}}" alt="Paper QR" onerror="this.parentElement.remove()">
+        <figcaption class="qr-label">Paper</figcaption>
+      </figure>
+      <figure class="qr">
+        <img class="qr-img" src="{{HDR_QR_CODE}}" alt="Code QR" onerror="this.parentElement.remove()">
+        <figcaption class="qr-label">Code</figcaption>
+      </figure>
+    </div>
+  </div>
+  <button class="listen-all" data-listen-all>Full Listen</button>
+</header>

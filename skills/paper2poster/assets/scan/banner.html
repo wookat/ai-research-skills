@@ -1,0 +1,38 @@
+<style>
+  /* Scan-to-Read variant: BANNER — an accent-filled call-to-action strip spanning the
+     section, with the QR inline at the right. The section card itself is neutralised so the
+     strip IS the visible box (works on top of any style's .section / ::before treatment).
+     Shared invariants repeated so the partial is self-contained. */
+  .section[data-section="scan-to-read"] h2 { position: static !important; transform: none !important; background: none !important; max-width: none !important; display: block; margin: 0; padding: 0; }
+  .section[data-section="scan-to-read"] .qr-img { background-color: #fff; background-size: contain; background-repeat: no-repeat; background-position: center; background-origin: content-box; padding: 8pt; border: 1px solid #e5e5e0; border-radius: 9pt; image-rendering: pixelated; aspect-ratio: 1 / 1; }
+  .section[data-section="scan-to-read"] .tq[data-qr=""],
+  .section[data-section="scan-to-read"] .tq[data-qr*="{{"] { display: none !important; }
+  .section[data-section="scan-to-read"]:not(:has(.tq:not([data-qr=""]):not([data-qr*="{{"]))) { display: none; }
+  body:has(.titlebar img.qr-img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"],
+  body:has(.titlebar .qr-tile .chip.qr img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"] { display: none; }
+  /* banner layout — neutralise the host section card so the accent strip is the box */
+  .section[data-section="scan-to-read"]:has(.scan-banner) { padding: 0 !important; border: none !important; background: none !important; box-shadow: none !important; }
+  .section[data-section="scan-to-read"]:has(.scan-banner)::before { display: none !important; }
+  .section[data-section="scan-to-read"] .scan-banner { display: flex; flex-direction: row; align-items: center; justify-content: space-between; flex: 1 1 auto; min-height: 0; gap: 26pt; background: var(--accent); border-radius: 14pt; padding: 26pt 32pt; }
+  .section[data-section="scan-to-read"] .scan-banner .scan-banner-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6pt; }
+  .section[data-section="scan-to-read"] .scan-banner .scan-cta { font-size: 40pt; font-weight: 800; color: #fff; line-height: 1.1; }
+  .section[data-section="scan-to-read"] .scan-banner .scan-url { font-size: 24pt; color: #fff; opacity: 0.85; word-break: break-all; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; }
+  .section[data-section="scan-to-read"] .scan-banner .scan-url[data-url=""],
+  .section[data-section="scan-to-read"] .scan-banner .scan-url[data-url*="{{"] { display: none; }
+  .section[data-section="scan-to-read"] .scan-banner .tq { flex: 0 0 auto; }
+  .section[data-section="scan-to-read"] .scan-banner .qr-img { height: 230pt; width: auto; }
+
+  /* --- shared scan polish (posterskill-inspired: QR card depth + accent caption pill) --- */
+  .section[data-section="scan-to-read"] .qr-img { border-radius: 13pt !important; box-shadow: 0 4pt 16pt rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.06); padding: 10pt !important; }
+  .section[data-section="scan-to-read"] .tq { gap: 12pt !important; }
+  .section[data-section="scan-to-read"] .tq span { background: var(--accent-soft); color: var(--accent) !important; font-weight: 800 !important; padding: 4pt 17pt; border-radius: 999pt; letter-spacing: 0.02em; }
+</style>
+<div class="section" data-section="scan-to-read">
+  <div class="scan-qr scan-banner">
+    <div class="scan-banner-text">
+      <div class="scan-cta">Read the full paper</div>
+      <div class="scan-url" data-url="{{URL_PAPER}}">{{URL_PAPER}}</div>
+    </div>
+    <div class="tq" data-qr="{{QR_PAPER}}"><div class="qr-img" style="background-image:url('{{QR_PAPER}}')"></div></div>
+  </div>
+</div>

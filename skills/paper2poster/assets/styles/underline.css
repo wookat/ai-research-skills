@@ -1,0 +1,12 @@
+/* underline.css — 'Heavy Underline' body-block style (section card + h2). Adapts the
+   gallery block to the real poster (.section padding/flex unchanged, h2 60pt).
+   Theme/header ride the SOLID defaults (flat white chips) via --tb-chip-shadow. */
+:root { --fig-img-radius: 4px; --tb-chip-shadow: none; }
+.section {
+    position: relative; padding: 32pt; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  background:#fff; border:1px solid #ededed; border-radius:6pt;
+}
+.section h2 {
+  margin: 0 0 0.45em 0; font-size: 60pt; line-height: 1.1; font-weight: 800;
+  color:var(--accent); border-bottom:6pt solid var(--accent); padding-bottom:0.1em;
+}

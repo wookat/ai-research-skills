@@ -1,0 +1,44 @@
+<style>
+  /* Scan-to-Read variant: DIRECTORY — heading + text links to NON-QR resources only (e.g. the
+     Project page) on the LEFT; the Paper/Code QR tiles on the RIGHT. paper/code are NOT repeated
+     as text links here — the QR IS their link. The link list auto-hides when there is no extra
+     non-QR resource. Shared invariants repeated so the partial is self-contained. */
+  .section[data-section="scan-to-read"] h2 { position: static !important; transform: none !important; background: none !important; max-width: none !important; display: block; margin: 0; padding: 0; }
+  .section[data-section="scan-to-read"] .qr-img { background-color: #fff; background-size: contain; background-repeat: no-repeat; background-position: center; background-origin: content-box; padding: 8pt; border: 1px solid #e5e5e0; border-radius: 9pt; image-rendering: pixelated; aspect-ratio: 1 / 1; }
+  .section[data-section="scan-to-read"] .tq[data-qr=""],
+  .section[data-section="scan-to-read"] .tq[data-qr*="{{"] { display: none !important; }
+  .section[data-section="scan-to-read"]:not(:has(.tq:not([data-qr=""]):not([data-qr*="{{"]))) { display: none; }
+  body:has(.titlebar img.qr-img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"],
+  body:has(.titlebar .qr-tile .chip.qr img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"] { display: none; }
+  /* directory layout */
+  .section[data-section="scan-to-read"] .scan-dir { display: flex; flex-direction: row; align-items: stretch; justify-content: flex-start; flex: 1 1 auto; min-height: 0; gap: 30pt; }
+  .section[data-section="scan-to-read"] .scan-dir .scan-aside { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 16pt; }
+  .section[data-section="scan-to-read"] .scan-dir h2 { font-size: 40pt; line-height: 1.05; color: var(--accent); }
+  .section[data-section="scan-to-read"] .scan-dir .scan-links { display: flex; flex-direction: column; gap: 11pt; }
+  .section[data-section="scan-to-read"] .scan-dir .scan-links:empty { display: none; }
+  .section[data-section="scan-to-read"] .scan-dir .scan-link { display: flex; flex-direction: column; gap: 6pt; align-self: flex-start; background: var(--accent-soft); border: 2pt solid var(--accent); border-radius: 12pt; padding: 13pt 20pt; }
+  .section[data-section="scan-to-read"] .scan-dir .scan-link[data-url=""],
+  .section[data-section="scan-to-read"] .scan-dir .scan-link[data-url*="{{"] { display: none; }
+  .section[data-section="scan-to-read"] .scan-dir .lk-label { font-size: 24pt; font-weight: 700; color: var(--accent); line-height: 1.1; }
+  .section[data-section="scan-to-read"] .scan-dir .lk-url { font-size: 22pt; color: var(--muted); word-break: break-all; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; line-height: 1.2; }
+  .section[data-section="scan-to-read"] .scan-dir .tq { flex: 0 0 auto; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8pt; min-height: 0; }
+  .section[data-section="scan-to-read"] .scan-dir .qr-img { height: 270pt; max-height: 100%; width: auto; }
+  .section[data-section="scan-to-read"] .scan-dir .tq span { font-size: 25pt; font-weight: 600; color: var(--muted); }
+
+  /* --- shared scan polish (posterskill-inspired: QR card depth + accent caption pill) --- */
+  .section[data-section="scan-to-read"] .qr-img { border-radius: 13pt !important; box-shadow: 0 4pt 16pt rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.06); padding: 10pt !important; }
+  .section[data-section="scan-to-read"] .tq { gap: 12pt !important; }
+  .section[data-section="scan-to-read"] .tq span { background: var(--accent-soft); color: var(--accent) !important; font-weight: 800 !important; padding: 4pt 17pt; border-radius: 999pt; letter-spacing: 0.02em; }
+</style>
+<div class="section" data-section="scan-to-read">
+  <div class="scan-qr scan-dir">
+    <div class="scan-aside">
+      <h2>Scan to Read</h2>
+      <div class="scan-links">
+        <div class="scan-link" data-url="{{URL_PROJECT}}"><span class="lk-label">Project</span><span class="lk-url">{{URL_PROJECT}}</span></div>
+      </div>
+    </div>
+    <div class="tq" data-qr="{{QR_PAPER}}"><div class="qr-img" style="background-image:url('{{QR_PAPER}}')"></div><span>Paper</span></div>
+    <div class="tq" data-qr="{{QR_CODE}}"><div class="qr-img" style="background-image:url('{{QR_CODE}}')"></div><span>Code</span></div>
+  </div>
+</div>

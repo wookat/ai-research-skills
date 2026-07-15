@@ -1,0 +1,56 @@
+/* framed.css — the ORIGINAL 'framed' style layer (extracted verbatim).
+   White section cards with a neutral thin frame (no ::before stripe);
+   the section's color identity lives in the h2 filled banner. Injected
+   at the STYLE_CSS hook by compose_poster.py. */
+:root {
+  --fig-img-radius: 8pt;
+  /* Header theme (read by the header partials' --tb-* contract): a white
+     outlined card with an accent title — matches the framed section cards
+     and restores the original framed titlebar look. */
+  --tb-bg: #ffffff;
+  --tb-fg: var(--text);
+  --tb-title-fg: var(--accent);
+  --tb-sub-fg: var(--muted);
+  --tb-border: 3pt solid var(--accent);
+  --tb-radius: 14pt;
+  --tb-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --tb-chip-bg: #ffffff;
+  --tb-chip-shadow: none;
+  --tb-conf-fg: var(--accent);
+  --tb-divider: #d8d8d4;
+}
+  .section {
+    position: relative;
+    /* Was: solid white. Now: warm off-white from --bg so the card sits on a
+       background that already differs from the surrounding page. The h2
+       accent banner (already present in the framed style) provides the
+       visual identity, so no extra top stripe needed here. */
+    background: var(--bg);
+    /* Neutral thin frame — the section's color identity now lives in
+       the h2 banner (solid accent-filled bar at the top), not the
+       border. Border stays neutral + thin so the eye is drawn to the
+       banner, not the frame. */
+    border: 1pt solid #d8d8d4;
+    border-radius: 14pt;
+    padding: 32pt;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+  .section h2 {
+    /* Solid filled banner extending edge-to-edge of the section card.
+       Negative margin = section padding (32pt) pulls the bar to the
+       card's inner border; padding on the bar adds the text inset.
+       Border-radius top corners match the section's border-radius so
+       the bar's top edge sits flush with the rounded card corner. */
+    margin: -32pt -32pt 0.45em -32pt;
+    padding: 0.28em 32pt;
+    font-size: 60pt;
+    line-height: 1.1;
+    font-weight: 800;
+    color: white;
+    background: var(--section-accent, var(--accent));
+    border-radius: 14pt 14pt 0 0;
+  }

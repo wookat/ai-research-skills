@@ -1,0 +1,12 @@
+/* neo-brutal.css — 'Neo-Brutalist' body-block style (section card + h2). Adapts the
+   gallery block to the real poster (.section padding/flex unchanged, h2 60pt).
+   Theme/header ride the SOLID defaults (flat white chips) via --tb-chip-shadow. */
+:root { --fig-img-radius: 4px; --tb-chip-shadow: none; }
+.section {
+    position: relative; padding: 32pt; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  background:#fff; border:3.5pt solid #111111; border-radius:0; box-shadow:7pt 7pt 0 var(--accent);
+}
+.section h2 {
+  margin: 0 0 0.45em 0; font-size: 60pt; line-height: 1.1; font-weight: 800;
+  color:#111111; text-transform:uppercase; letter-spacing:0.01em;
+}

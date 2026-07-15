@@ -1,0 +1,14 @@
+/* double-rule.css — 'Double Rule' body-block style (section card + h2). Adapts the
+   gallery block to the real poster (.section padding/flex unchanged, h2 60pt).
+   Theme/header ride the SOLID defaults (flat white chips) via --tb-chip-shadow. */
+:root { --fig-img-radius: 4px; --tb-chip-shadow: none; }
+.section {
+    position: relative; padding: 32pt; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  background:#fff; border:1px solid #ededed; border-radius:6pt;
+}
+.section h2 {
+  margin: 0 0 0.45em 0; font-size: 60pt; line-height: 1.1; font-weight: 800;
+  text-align:center; border-top:2.5pt solid var(--accent); border-bottom:2.5pt solid var(--accent); padding:0.14em 0 !important;
+  /* !important resets the layout base `.section h2{padding-right:5.5em}` (Listen-button reservation) to 0
+     so the title is truly centred between the two rules (the button is absolute at the card corner). */
+}

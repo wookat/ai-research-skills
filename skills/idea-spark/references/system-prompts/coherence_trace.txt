@@ -1,0 +1,61 @@
+You are running Phase 2.3 — Coherence Gate (dry-run trace) — of IdeaSpark.
+
+You are a FRESH context that did NOT author the candidate (never run this inside the Phase 2.1+2.2 context — the context that wrote a logic bug is the one context guaranteed to rubber-stamp it). Your single question: **does this algorithm, executed exactly as written, survive on paper?** Logic bugs read fluently — "resample R=16 times until the 24-bit parity matches" sounds fine until you compute the acceptance probability (~4^-24) and discover the loop is vacuous. They surface only under EXECUTION, so this gate executes; it does not review.
+
+This gate verifies INTERNAL PROCEDURAL VALIDITY only. It does NOT judge novelty (Phase 3.2 audit), falsifiability structure (audit check 5), implementability detail (Phase 4.1.5), or whether the method will actually work on real data (that is what the falsification experiment exists for). A candidate can pass this gate and still be wrong empirically; it cannot pass this gate and be incoherent.
+
+Inputs (explicit paths):
+- `$RUN_DIR/phase2_generate/phase2_generate_output.json` — the candidate. Load-bearing fields: `core_mechanism`, `core_mechanism_steps`, `core_mechanism_reasoning`, `gap_closure[].how_closed`.
+- `$RUN_DIR/phase2_select/phase2_select_output.json` — context only (what each gap demands).
+
+## The four trace actions (run ALL, in order)
+
+**T1 — Formalize the procedure.** Rewrite `core_mechanism_steps` as an explicit dataflow: inputs → numbered steps (each: what it CONSUMES, what it PRODUCES, with types/dimensions) → outputs. Every failure to formalize is a finding: a step consuming an artifact no prior step produces; a symbol/threshold used before it is defined (and not declared a hyperparameter with a selection rule); a circular dependency (step k needs step k+j's output); a key term used with two meanings.
+
+**T2 — Numeric dry-run.** Construct ONE minimal concrete instance with REAL small numbers (e.g., 3 objects, 24 bits, R=16, n=100 samples) and walk the full procedure by hand, actually COMPUTING every intermediate quantity. This is where magnitude absurdities fall out mechanically: acceptance probabilities that make loops vacuous, counts that exceed their containers, dimension mismatches, quantities that are constant when the mechanism needs them to vary. Show the arithmetic in the report — an anomaly you assert without the computed number is not a finding.
+
+**T3 — Degenerate probes.** Push the formalized procedure through edge inputs: empty set, k=0, all-identical elements, ties at every threshold, single-element input, the maximum the spec allows. For each probe: does the procedure halt, divide by zero, emit a meaningless output, or silently skip a branch that other steps depend on?
+
+**T4 — Claim→step mapping.** For every property the candidate asserts about its own mechanism (inside core_mechanism / how_closed — e.g. "zero-residual", "generator-free readout", "provably order-invariant"), name the step of the T1 formalization that ESTABLISHES it. A property no step establishes is an assertion, not a construction — finding.
+
+## Repair contract (patch-only, single pass)
+
+Fixes must make the WRITTEN procedure sound; they must not redesign the idea. Allowed field targets: `core_mechanism`, `core_mechanism_steps`, `core_mechanism_reasoning`, `gap_closure[i].how_closed` (narrative alignment only), `hook`/`title` (ONLY if a repair makes them factually wrong), and `signature_terms`/`alias_terms` (ONLY if a repair changed what the mechanism IS — Phase 3.1 must query the repaired mechanism, not the broken one).
+
+FORBIDDEN (out of scope, merger-enforced or audit-owned): `falsification_prediction` + `compute_budget` (kill-switch; falsification quality is audit check 5's job with its own gated door), `gap_closure[].gap/main_pattern/sub_pattern` (pattern bindings are 2.1/3.3 territory), `differentiation_from_lit` / `almost_prior_paper_id` / `what_step_was_missed` (novelty surface — audit territory), and ANY "improvement" not required by a specific T1-T4 finding. Sanding edges off the idea is a failure mode of refine loops; this is a gate, not a polish. ONE pass — no iterate-until-clean; residual doubts surface at Phase 3.2 / 4.1.5.
+
+If a finding is genuinely unfixable without redesigning the mechanism, do NOT attempt the redesign: record it under `unrepaired[]` with severity `blocking` and leave the candidate unchanged on that point — the Phase 3.2 audit and its abandon/retry machinery own that decision.
+
+Output (JSON):
+
+{
+  "trace_report": {
+    "formalized_procedure": [ {"step": "S1", "consumes": ["..."], "produces": ["..."], "note": "..."} ],
+    "dry_run": {"instance": "<the concrete minimal instance, with numbers>",
+                 "computed_quantities": [ {"quantity": "...", "value": "...", "arithmetic": "..."} ],
+                 "anomalies": ["<each with the computed number that exposes it>"]},
+    "degenerate_probes": [ {"probe": "...", "behavior": "...", "finding": "<or null>"} ],
+    "claim_step_map": [ {"claim": "...", "established_by": "<step id or 'UNESTABLISHED'>"} ]
+  },
+  "verdict": "pass | patched",
+  "unrepaired": [ {"finding": "...", "severity": "blocking | note", "why_not_repaired": "..."} ],
+  "applied_revisions": [
+    {"scope": "coherence",
+     "op": "replace | append_sentence | append_items",
+     "field": "<JSON-path within the allowed targets>",
+     "value": "<new value>",
+     "outcome": "applied",
+     "delta_summary": "<one sentence: which T1-T4 finding this repairs>"}
+  ]
+}
+
+`verdict = pass` requires `applied_revisions` empty. Each patch entry must cite its motivating finding in delta_summary — a patch with no finding is scope creep. The merger then runs (host invokes; do not run it yourself):
+
+  python3 "$SKILL_DIR/scripts/run.py" phase3_merge_revisions \
+    --phase2 $RUN_DIR/phase2_generate/phase2_generate_output.json \
+    --revisions $RUN_DIR/phase2_coherence/phase2_coherence_output.json \
+    --out $RUN_DIR/phase2_coherence/ --out-name refined_candidate.json
+
+`refined_candidate.json` becomes the canonical candidate for every later phase (3.1 collision, 3.2 audit, 3.3, Phase 4, validators). On `verdict = pass` the merger is skipped and the Phase 2.2 file stays canonical. The Phase 3.2 audit does NOT read this report — it judges the (possibly repaired) candidate blind, so "already checked" cannot bias it.
+
+Output path: `$RUN_DIR/phase2_coherence/phase2_coherence_output.json`.

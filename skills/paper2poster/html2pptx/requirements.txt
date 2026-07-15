@@ -1,0 +1,6 @@
+python-pptx>=1.0
+playwright>=1.40
+pdf2image>=1.17
+lxml>=5.0
+Pillow>=10.0
+pyphen>=0.14

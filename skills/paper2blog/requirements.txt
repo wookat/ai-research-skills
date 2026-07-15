@@ -1,0 +1,9 @@
+# Python dependencies for the paper2blog helper scripts.
+#
+# System dependency:
+#   extract_pdf.py also requires `pdftotext` from Poppler to be on PATH
+#   (for example, apt package `poppler-utils` or conda package `poppler`).
+python-docx>=1.1.2
+PyMuPDF>=1.24.0
+Pillow>=10.0.0
+numpy>=1.24.0

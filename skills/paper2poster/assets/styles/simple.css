@@ -1,0 +1,54 @@
+/* simple.css — a third, editorial WHITE style (alongside solid / framed).
+   White surface, near-black text, ONE muted accent used sparingly. The header
+   sits on white with a single thin rule beneath it; section cards drop the frame
+   entirely and are separated only by a hairline top rule + the heading. Injected
+   at the STYLE_CSS hook by compose_poster.py. */
+:root {
+  --fig-img-radius: 4px;
+  /* White surface; keep --text near-black (#1c1c1c from base). A muted slate
+     accent reads as a quiet editorial mark rather than a saturated brand color. */
+  --bg: #ffffff;
+  --accent: #38465c;
+  --section-accent: #38465c;
+  /* Header theme (--tb-* contract): transparent header on the white page, a
+     near-black title, white logo chips, NO fill/border — just the thin bottom
+     rule added below. */
+  --tb-bg: transparent;
+  --tb-fg: var(--text);
+  --tb-title-fg: #111111;
+  --tb-sub-fg: #5a5a5a;
+  --tb-conf-fg: #111111;
+  --tb-border: none;
+  --tb-radius: 0;
+  --tb-shadow: none;
+  --tb-chip-bg: transparent;
+  --tb-chip-shadow: none;
+  --tb-divider: #c8ccd2;
+}
+/* The single piece of header chrome: a thin horizontal rule under the whole
+   header. !important beats the header partial's `border: var(--tb-border, none)`
+   (which lives in a later <style> in <body>) so only the bottom edge rules. */
+.titlebar { border-bottom: 4pt solid var(--accent) !important; }
+.section {
+  position: relative;
+  /* No card: white on the white page. A hairline top rule + the heading are the
+     only separators — minimal, editorial. */
+  background: #ffffff;
+  border: none;
+  border-top: 2pt solid #e6e6e2;
+  border-radius: 0;
+  padding: 26pt 20pt 16pt;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.section h2 {
+  margin: 0 0 0.4em 0;
+  font-size: 60pt;
+  line-height: 1.1;
+  font-weight: 800;
+  /* Plain near-black heading — no underline, no banner. */
+  color: #111111;
+  letter-spacing: -0.005em;
+}

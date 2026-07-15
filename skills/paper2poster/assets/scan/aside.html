@@ -1,0 +1,59 @@
+<style>
+  /* Scan-to-Read variant: ASIDE (default) — the "Scan to Read" heading + a contact line
+     sit on the LEFT; the Paper/Code QR codes sit on the RIGHT, each sized to the FULL
+     section height (so even a flat / squished section still gives the largest scannable
+     code). QR tiles render as CSS backgrounds (not <img>) so the figure-sizing / preflight
+     image gates never see them; each tile auto-hides when its {{QR_*}} didn't resolve, and
+     the whole section hides when NO QR resolved. The section is also suppressed whenever the
+     titlebar already shows a QR (header v5), so a QR never appears twice. */
+  .section[data-section="scan-to-read"] h2 {
+    position: static !important; transform: none !important; background: none !important;
+    max-width: none !important; display: block; margin: 0; padding: 0;
+    font-size: 40pt; line-height: 1.05; color: var(--accent);
+  }
+  .section[data-section="scan-to-read"] .scan-qr {
+    display: flex; flex-direction: row; align-items: stretch; justify-content: flex-start;
+    flex: 1 1 auto; min-height: 0; gap: 30pt;
+  }
+  .section[data-section="scan-to-read"] .scan-aside {
+    flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 12pt;
+  }
+  .section[data-section="scan-to-read"] .scan-contact {
+    font-size: 25pt; line-height: 1.35; color: var(--muted); word-break: break-word;
+  }
+  .section[data-section="scan-to-read"] .scan-contact:empty { display: none; }
+  .section[data-section="scan-to-read"] .scan-qr .tq {
+    flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8pt;
+    align-self: stretch; min-height: 0;
+  }
+  .section[data-section="scan-to-read"] .scan-qr .qr-img {
+    height: 290pt; max-height: 100%; aspect-ratio: 1 / 1; width: auto;
+    padding: 8pt; background-color: #fff;
+    background-size: contain; background-repeat: no-repeat; background-position: center;
+    background-origin: content-box; border: 1px solid #e5e5e0; border-radius: 9pt;
+    image-rendering: pixelated;
+  }
+  .section[data-section="scan-to-read"] .scan-qr .tq span {
+    flex: 0 0 auto; font-size: 26pt; font-weight: 600; color: var(--muted); line-height: 1.2;
+  }
+  .section[data-section="scan-to-read"] .scan-qr .tq[data-qr=""],
+  .section[data-section="scan-to-read"] .scan-qr .tq[data-qr*="{{"] { display: none; }
+  .section[data-section="scan-to-read"]:not(:has(.tq:not([data-qr=""]):not([data-qr*="{{"]))) { display: none; }
+  body:has(.titlebar img.qr-img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"],
+  body:has(.titlebar .qr-tile .chip.qr img[src]:not([src=""]):not([src*="{{"])) .section[data-section="scan-to-read"] { display: none; }
+
+  /* --- shared scan polish (posterskill-inspired: QR card depth + accent caption pill) --- */
+  .section[data-section="scan-to-read"] .qr-img { border-radius: 13pt !important; box-shadow: 0 4pt 16pt rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.06); padding: 10pt !important; }
+  .section[data-section="scan-to-read"] .tq { gap: 12pt !important; }
+  .section[data-section="scan-to-read"] .tq span { background: var(--accent-soft); color: var(--accent) !important; font-weight: 800 !important; padding: 4pt 17pt; border-radius: 999pt; letter-spacing: 0.02em; }
+</style>
+<div class="section" data-section="scan-to-read">
+  <div class="scan-qr">
+    <div class="scan-aside">
+      <h2>Scan to Read</h2>
+      <div class="scan-contact">{{CONTACT}}</div>
+    </div>
+    <div class="tq" data-qr="{{QR_PAPER}}"><div class="qr-img" style="background-image:url('{{QR_PAPER}}')"></div><span>Paper</span></div>
+    <div class="tq" data-qr="{{QR_CODE}}"><div class="qr-img" style="background-image:url('{{QR_CODE}}')"></div><span>Code</span></div>
+  </div>
+</div>
