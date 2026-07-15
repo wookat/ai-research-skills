@@ -4,8 +4,14 @@
 > 事故记录）供溯源。对本包而言，真正的操作性内容是 **§2 的 helper 解析链**与
 > **失败策略（Policy A/B/C）**。本包不附带 `install_aris*.sh` / `smart_update*.sh`；
 > 文中提到的 `~/.aris/repo` 全局指针由本包根目录的 `bash install.sh` 写入（或手工
-> `export ARIS_REPO=<包根>`）。本包实际收录的 helper 见 `tools/` 目录；未收录的
-> helper（如 `research_wiki.py`、`save_trace.sh`）按各 skill 声明的降级路径处理。
+> `export ARIS_REPO=<包根>`）。本包实际收录的 helper 见 `tools/` 目录（含
+> `research_wiki.py`、`save_trace.sh` 等，均为上游原实现收录）。
+>
+> **跨平台环境变量**：`CLAUDE_PROJECT_DIR`（项目根）与 `CLAUDE_SKILL_DIR`
+> （当前 skill 目录）是 Claude Code 专有变量，Codex / Devin / Cursor 上不存在。
+> 各脚本已按"变量缺失 → 回退当前工作目录 / `<SKILL.md 所在目录>` 相对定位"的
+> 约定编写；非 Claude Code 平台无需设置这两个变量，只需从项目根调用脚本，
+> 或手工 `export CLAUDE_PROJECT_DIR=$(pwd)` 以获得与 Claude Code 一致的行为。
 
 When one ARIS skill delegates work to another (or to persistent project
 state), the coupling must be **engineered**, not assumed. This document
@@ -127,7 +133,7 @@ verifiers whose exit code gates submission readiness (e.g.
 [ -n "$AUDIT_VERIFIER" ] || {
   echo "ERROR: verify_paper_audits.sh not resolved at .aris/tools/, tools/, \$ARIS_REPO/tools/, or via ~/.aris/repo." >&2
   echo "       assurance=submission requires the verifier; aborting Final Report." >&2
-  echo "       Fix: rerun bash tools/install_aris.sh (or smart_update.sh) to refresh ~/.aris/repo, or export ARIS_REPO." >&2
+  echo "       Fix: run 'bash install.sh' at the pack root (writes ~/.aris/repo), or export ARIS_REPO=<pack-root>." >&2
   exit 1
 }
 ```
@@ -140,7 +146,7 @@ gets produced, only the wiki side-effect is missed).
 ```bash
 [ -n "$WIKI_SCRIPT" ] || {
   echo "WARN: research_wiki.py not resolved; primary output unaffected, wiki side-effect skipped." >&2
-  echo "      Fix: rerun bash tools/install_aris.sh or smart_update.sh (refreshes ~/.aris/repo), export ARIS_REPO, or copy the helper to tools/." >&2
+  echo "      Fix: run 'bash install.sh' at the pack root (writes ~/.aris/repo), export ARIS_REPO=<pack-root>, or copy the helper to tools/." >&2
 }
 [ -n "$WIKI_SCRIPT" ] && python3 "$WIKI_SCRIPT" ingest_paper research-wiki/ --arxiv-id "$id"
 ```

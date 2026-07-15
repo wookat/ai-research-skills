@@ -46,6 +46,7 @@ import argparse
 import itertools
 import json
 import re
+import sys
 from pathlib import Path
 
 
@@ -136,6 +137,11 @@ def main():
     print(f"Built manifest with {len(manifest['phases'])} phases, "
           f"{total_jobs} total jobs")
     print(f"Saved to {args.output}")
+    if total_jobs == 0:
+        print("WARNING: manifest contains 0 jobs — check the grid spec "
+              "(empty 'grid' axes or missing 'phases' produce nothing to run)",
+              file=sys.stderr)
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

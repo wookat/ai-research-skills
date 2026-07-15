@@ -1,102 +1,126 @@
 #!/usr/bin/env python3
-"""capture_filter.py — mechanical anti-self-poisoning screen for durable captures.
+"""Anti-self-poisoning capture filter for ARIS memory (research-wiki / meta-optimize).
 
-Implements the deterministic side of shared-references/capture-antipatterns.md:
-flags env-specific failures, transient errors, and negative tool-capability
-claims about the pack's own tooling before they are persisted into the
-research wiki or a SKILL.md proposal. Deliberately conservative: research
-findings about a *model/method* are NOT flagged — only operational noise.
+When ARIS captures durable knowledge — a research-wiki idea/claim, a meta-optimize
+SKILL.md proposal — it must NOT store *operational noise* that hardens into a
+self-cited falsehood. Hermes learned this the hard way: its self-improvement loop
+poisoned itself with negative tool-capability claims that "harden into refusals
+the agent cites against itself for months after the actual problem was fixed"
+(background_review.py). ARIS's research-wiki "failed ideas → anti-repeat memory"
+is the GOOD inverse; this filter is the missing blocklist for the BAD kind.
 
-Library:
-    from capture_filter import screen, reason_detail
-    screen(text) -> [reason, ...]   # [] = clean
-    # reason in {"env_failure", "transient_error", "negative_tool_claim"}
+This is a CHEAP, DETERMINISTIC pre-filter for the UNAMBIGUOUS classes — error
+output and explicitly-broken-tool phrasing. The judgment-y classes (a single-run
+narrative that isn't a class-level rule; an intentional one-off) are prose
+guidance in shared-references/capture-antipatterns.md, not regex.
 
-CLI:
-    python3 tools/capture_filter.py <file|->   # exit 1 + reasons if flagged
+Asymmetry (acceptance-gate.md): this filter may REJECT a capture same-model (it
+is a mechanical safety screen, low risk) — but anything that PASSES and would
+become a load-bearing skill/claim still goes to the cross-model jury. Same-model
+is fine to reject; must-be-cross-model to accept.
+
+Deliberately conservative — anchored so it does NOT flag legitimate RESEARCH
+findings ("the model can't generalize to OOD", "the method fails on long
+sequences"). It targets ARIS's OWN TOOLING being declared broken, and raw error
+output. False negatives are fine (the jury still judges); a false reject just
+sends a real insight to manual review.
 """
+
 from __future__ import annotations
 
+import argparse
 import re
 import sys
+from typing import List
 
-_ENV_FAILURE_PATTERNS = [
-    r"No module named",
-    r"ModuleNotFoundError",
-    r"ImportError:",
-    r"command not found",
-    r"Permission denied",
-    r"No such file or directory",
-    r"pip (?:install )?fail",
-    r"EACCES|ENOENT",
+# Raw error / environment-failure output — unambiguous; these are transient
+# operational state, never a durable research fact.
+_ENV_FAILURE = [
+    (re.compile(r"\bcommand not found\b", re.I), "env_failure"),
+    (re.compile(r"\bNo such file or directory\b", re.I), "env_failure"),
+    (re.compile(r"\bNo module named\b", re.I), "env_failure"),
+    (re.compile(r"\bModuleNotFoundError\b"), "env_failure"),
+    (re.compile(r"\bImportError\b"), "env_failure"),
+    (re.compile(r"\bPermission denied\b", re.I), "env_failure"),
+    (re.compile(r"\bconnection (refused|timed out|reset)\b", re.I), "transient_error"),
+    (re.compile(r"\b(rate limit|429|quota exceeded|503|502|temporarily unavailable)\b", re.I), "transient_error"),
+    (re.compile(r"\bCUDA out of memory\b|\bOOM\b", re.I), "transient_error"),
 ]
 
-_TRANSIENT_PATTERNS = [
-    r"\b429\b|rate limit",
-    r"CUDA out of memory|CUDA OOM|\bOOM\b",
-    r"connection (?:refused|reset|timed? ?out)",
-    r"\b50[234]\b (?:error|gateway|unavailable)",
-    r"temporar(?:y|ily) (?:fail|unavailable)",
-    r"SSLError|TLS handshake",
+# Negative tool-capability claims about ARIS's OWN infrastructure. Anchored on
+# ARIS-INFRA-QUALIFIED nouns ONLY — bare model names (codex/gemini/oracle/gpt-5)
+# and generic infra words (the api/server/gpu/tool/cli/reviewer) are deliberately
+# NOT here, because they appear in legitimate research findings ("Gemini cannot
+# solve task T", "the GPU cannot fit the batch", "the API does not expose
+# gradients"). Flagging those would suppress real research notes — the failure
+# this filter must avoid. So we require a qualifier (mcp/cli/reviewer/-pro/-review)
+# or an unambiguous ARIS tool name.
+_TOOL = (r"(?:"
+         r"codex[ -](?:mcp|cli|reviewer)|"
+         r"oracle[ -](?:mcp|pro|reviewer)|"
+         r"gemini[ -](?:mcp|cli|review|reviewer)|"
+         r"manual[ -]review|"
+         # "claude code" dropped — too broad: research notes may benchmark Claude
+         # Code as a coding agent ("Claude Code cannot solve this SWE-bench task"),
+         # which is a finding, not an ARIS-infra complaint.
+         r"mcp server|reviewer mcp|the reviewer backend|"
+         r"wandb"
+         r")")
+_NEG_CLAIM = [
+    (re.compile(_TOOL + r"\s+(?:can'?t|cannot|is unable to|does(?:n'?t| not))\s+", re.I), "negative_tool_claim"),
+    (re.compile(_TOOL + r"\s+(?:is|are|was|were)\s+(?:broken|down|useless|unusable|buggy)\b", re.I), "negative_tool_claim"),
+    (re.compile(_TOOL + r"\s+always\s+(?:fails|crashes|hangs|errors)\b", re.I), "negative_tool_claim"),
+    (re.compile(r"\b(?:don'?t|do not|never)\s+use\s+(?:the\s+|a\s+)?" + _TOOL, re.I), "negative_tool_claim"),
 ]
 
-# Infrastructure nouns: the pack's own tooling, not research subjects.
-_TOOL_NOUNS = (
-    r"(?:codex|gemini|oracle|claude|devin|cursor|the reviewer|the MCP|"
-    r"the CLI|the agent|the skill|the helper|the tool)"
-)
-_NEGATIVE_TOOL_PATTERNS = [
-    rf"{_TOOL_NOUNS}[^.\n]*\b(?:can'?t|cannot|is broken|doesn'?t work|"
-    r"never works|always fails|is unable to)",
-    rf"(?:don'?t|do not|never) use {_TOOL_NOUNS}",
-    rf"{_TOOL_NOUNS} (?:is|are) (?:broken|useless|unreliable)",
-]
-
-_REASONS = [
-    ("env_failure", _ENV_FAILURE_PATTERNS),
-    ("transient_error", _TRANSIENT_PATTERNS),
-    ("negative_tool_claim", _NEGATIVE_TOOL_PATTERNS),
-]
+_ALL = _ENV_FAILURE + _NEG_CLAIM
 
 
-def reason_detail(text: str) -> dict[str, list[str]]:
-    """Return {reason: [matched snippets]} for every anti-pattern found."""
-    found: dict[str, list[str]] = {}
-    for reason, patterns in _REASONS:
-        for pat in patterns:
-            for m in re.finditer(pat, text, re.IGNORECASE):
-                start = max(0, m.start() - 30)
-                snippet = text[start:m.end() + 30].replace("\n", " ").strip()
-                found.setdefault(reason, []).append(snippet)
+def screen(text: str) -> List[str]:
+    """Return de-duplicated anti-pattern reason codes found in `text` (empty = clean).
+
+    reason ∈ {env_failure, transient_error, negative_tool_claim}.
+    """
+    if not text:
+        return []
+    found: List[str] = []
+    for rx, reason in _ALL:
+        if reason not in found and rx.search(text):
+            found.append(reason)
     return found
 
 
-def screen(text: str) -> list[str]:
-    """Return the list of anti-pattern reasons found ([] = clean)."""
-    return sorted(reason_detail(text).keys())
+def reason_detail(reason: str) -> str:
+    return {
+        "env_failure": "looks like an environment-specific failure (missing binary/module/path "
+                       "/permission) — transient state, not a durable fact. Store HOW TO FIX or "
+                       "the missing config, never 'X failed'.",
+        "transient_error": "looks like a transient error (rate limit / OOM / network) that "
+                           "self-resolves — do not capture it as a durable rule.",
+        "negative_tool_claim": "looks like a negative capability claim about ARIS's own tooling "
+                              "('X can't / is broken'). These harden into self-cited refusals long "
+                              "after the real problem is fixed. Store the fix / the workaround, not "
+                              "'X can't do Y'.",
+    }.get(reason, reason)
+
+
+__all__ = ["screen", "reason_detail"]
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: capture_filter.py <file|->", file=sys.stderr)
-        return 2
-    if sys.argv[1] == "-":
-        text = sys.stdin.read()
-    else:
-        with open(sys.argv[1], encoding="utf-8") as f:
-            text = f.read()
-    detail = reason_detail(text)
-    if not detail:
-        print("clean")
-        return 0
-    for reason, snippets in sorted(detail.items()):
-        print(f"FLAGGED {reason}:")
-        for s in snippets[:5]:
-            print(f"  ... {s} ...")
-    print("Store the fix / missing config / workaround instead — never "
-          "'X can't do Y' or raw error text.", file=sys.stderr)
-    return 1
+    ap = argparse.ArgumentParser(description="ARIS anti-self-poisoning capture filter.")
+    ap.add_argument("path", help="file to screen, or - for stdin")
+    a = ap.parse_args()
+    text = sys.stdin.read() if a.path == "-" else open(a.path, encoding="utf-8").read()
+    reasons = screen(text)
+    if reasons:
+        print(f"DO-NOT-CAPTURE: {', '.join(reasons)}", file=sys.stderr)
+        for r in reasons:
+            print(f"  - {r}: {reason_detail(r)}", file=sys.stderr)
+        return 1
+    print("ok to capture (mechanical screen clean)")
+    return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

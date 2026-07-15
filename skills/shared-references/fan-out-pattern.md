@@ -364,3 +364,8 @@ the grant is self-justifying. Grant tracks usage; never the reverse.
 any mainline skill grants `Agent` without citing `fan-out-pattern.md` in its
 body. This keeps vestigial grants from creeping back and guarantees every
 real grant is traceable to the convention it follows.
+
+> 本整合包注记：该脚本沿用上游 ARIS 原实现，运行时要求仓库存在
+> `docs/SKILLS_CATALOG.md` 清单（上游 CI 布局）。本包未维护该清单，
+> 如需启用漂移检查，先按上游格式生成 `docs/SKILLS_CATALOG.md` 再运行；
+> 否则脚本将因文件缺失退出，这是预期行为而非损坏。

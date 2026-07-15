@@ -108,8 +108,11 @@ WIKI_SCRIPT=".aris/tools/research_wiki.py"
 }
 ```
 
-> **本整合包适配：**本包 `tools/research_wiki.py` 已收录（按本文件文档接口的
-> clean-room 实现，非上游 ARIS 私有脚本），在包根执行 `bash install.sh` 写入
+> **本整合包适配：**本包 `tools/research_wiki.py` 已收录（上游 ARIS 原实现，
+> MIT；子命令为 `init/slug/add_edge/rebuild_query_pack/rebuild_index/stats/log/
+> ingest_paper/add_claim/upsert_idea/add_experiment/sync`——本文件中的
+> `/research-wiki update` 与 `lint` 是 agent 执行的 skill 动作，改动落盘后用
+> `rebuild_query_pack`/`rebuild_index` 同步），在包根执行 `bash install.sh` 写入
 > `~/.aris/repo` 后解析链即可命中。仅当解析链仍未命中（未安装且未设 `ARIS_REPO`）
 > 时才降级为**直接按本文件前述目录结构手工读写 `research-wiki/` 下的 markdown 与
 > `graph/edges.jsonl`**，并在 wiki 根目录的 `README.md`（或首次创建时新建）记录
@@ -351,7 +354,7 @@ if research-wiki/ exists AND $WIKI_SCRIPT resolved (chain at top of this SKILL):
                 --evidence "..."
     log "research-lit ingested N papers"
 elif research-wiki/ exists but $WIKI_SCRIPT did not resolve:
-    warn "wiki update skipped — research_wiki.py unreachable; rerun install_aris.sh"
+    warn "wiki update skipped — research_wiki.py unreachable; run bash install.sh at the pack root"
 ```
 
 Each paper-reading skill ships its own Step "Update Research Wiki (if

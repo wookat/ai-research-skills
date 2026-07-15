@@ -17,3 +17,15 @@
 （去除 CLAUDE_PROJECT_DIR 硬依赖）、为缺少降级分支的外部 MCP 评审步骤补充 fallback 说明、
 为 scoop-check 补充报告落盘契约。方法内容未改动；未收录的 ARIS 引用见
 `skills/shared-references/pack-mapping.md` 的替换表。
+
+`tools/` 下的 helper（research_wiki.py、run_state.py、provenance.py、
+evidence_check.py、forensics_gate.py、verify_papers.py、capture_filter.py、
+overleaf_setup.sh / overleaf_audit.sh、threat_scan.py、figure_renderer.py、
+paper_illustration_image2.py、各文献 fetcher、experiment_queue/ 等）与 `tests/`
+下对应测试均为上游 ARIS 原实现的直接收录（MIT © 2026 wanshuiyin）；本包早期的
+clean-room 版本已被上游原件替换（研究 wiki、provenance、capture_filter、
+save_trace、verify_wiki_coverage、verify_paper_audits）。本包对上游 helper 的改动
+限于：run_state.py CLI 为 `--force` / `--provisional-advances` 增加
+`--decision-card` 人类授权参数、build_manifest.py 对 0 jobs 输出警告并非零退出、
+figure_renderer.py / paper_illustration_image2.py 以 skill 内 canonical 实现
+替换 tools/ 转发 shim（本包未收录对应上游 skill 目录）。

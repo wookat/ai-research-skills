@@ -5,6 +5,8 @@ argument-hint: "[paper-dir-or-pdf] [— venue: ICLR, canvas: 185x90cm landscape,
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebFetch, WebSearch, AskUserQuestion, mcp__codex__codex
 ---
 
+> **Fallback（本整合包补充）**：若 `mcp__codex__codex` 不可用，跨模型评审环节按本包 `skills/shared-references/reviewer-adapter.md` 降级（CLI → 零上下文子智能体/子会话），或跳过外部评审并在产物中注明 "External review skipped"；测量类硬 gate（截图测量、print 校验）照常执行。非 Claude Code 平台无 `CLAUDE_SKILL_DIR` 时，脚本按 `<本 SKILL.md 所在目录>/scripts/` 直接定位。
+
 # Paper Poster (HTML): measurement-gated poster generation
 
 One HTML file styled for an exact print canvas (`@page { size: W H }`), rendered to PDF

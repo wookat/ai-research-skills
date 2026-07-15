@@ -87,7 +87,7 @@ if [ -n "$EVIDENCE_CHECK" ]; then
 else
     echo "WARN: evidence_check.py not resolved at .aris/tools/, tools/, \$ARIS_REPO/tools/, or via ~/.aris/repo." >&2
     echo "      Pre-check skipped (Policy B); the Codex jury still runs. Fix: rerun" >&2
-    echo "      bash tools/install_aris.sh, export ARIS_REPO, or copy the helper to tools/." >&2
+    echo "      'bash install.sh' at the pack root, export ARIS_REPO, or copy the helper to tools/." >&2
 fi
 ```
 

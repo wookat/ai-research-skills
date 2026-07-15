@@ -25,7 +25,7 @@ Autonomously iterate: review → implement fixes → re-review, until the extern
 ## Constants
 
 - MAX_ROUNDS = 4
-- POSITIVE_THRESHOLD: score >= 6/10 **AND** verdict ∈ {"ready", "almost"} — **both** must hold. This matches the operative Phase-E STOP CONDITION exactly; the verdict vocabulary is {"ready", "almost", "not ready"} (a high score with a "not ready" verdict does NOT stop the loop). Earlier wording here used `or` and a stale verdict set ("accept"/"sufficient"/"ready for submission") — that was an internal inconsistency; the `AND` form is authoritative.
+- POSITIVE_THRESHOLD: score >= 6/10 **AND** verdict ∈ {"ready", "almost"} — **both** must hold, **AND** the verdict must come from a cross-family reviewer backend (see BACKEND GUARD in Phase B) — a same-model fallback verdict can never satisfy the positive threshold. This matches the operative Phase-E STOP CONDITION exactly; the verdict vocabulary is {"ready", "almost", "not ready"} (a high score with a "not ready" verdict does NOT stop the loop). Earlier wording here used `or` and a stale verdict set ("accept"/"sufficient"/"ready for submission") — that was an internal inconsistency; the `AND` form is authoritative.
 - REVIEW_DOC: `review-stage/AUTO_REVIEW.md` (cumulative log) *(fall back to `./AUTO_REVIEW.md` for legacy projects)*
 - REVIEWER_MODEL = `gpt-5.6-sol` — Default model for the Codex backend. Must be an OpenAI model (e.g., `gpt-5.6-sol`, `o3`, `gpt-4o`). Manual backend uses whatever model the user chooses.
 - **REVIEWER_BACKEND = `codex`** — Default: Codex MCP (xhigh). Override with `— reviewer: oracle-pro` for Oracle MCP, or `— reviewer: manual` for Manual Review MCP. If manual-review MCP is unavailable, stop and print the install command; do not fall back to Codex. See `shared-references/reviewer-routing.md`.
@@ -264,6 +264,17 @@ Then extract structured fields:
 assessment stops the *loop*; it is **not** a submission decision — see the mandatory
 decision card in Termination.
 
+**BACKEND GUARD (本整合包硬规则)**: the positive stop condition is only valid when
+the verdict comes from a **cross-family** reviewer backend (reviewer-adapter
+backends 1–5 with a different model family, or a deterministic verifier). If this
+round's verdict came from backend 6 (same-model self-review) or any same-family
+channel, the verdict may only trigger the NEGATIVE / continue-iterating branch —
+a positive same-family verdict must NOT terminate the loop. Instead record it as
+`provisional` in the loop state, keep iterating (or pause), and require a human or
+cross-model re-review before any positive termination. This enforces
+acceptance-gate.md ("a loop can DRIVE; it cannot ACQUIT") at the stop-condition
+level: same-model review can reject, never acquit.
+
 #### Phase B.5: Reviewer Memory Update (hard + nightmare only)
 
 **Skip entirely if `REVIEWER_DIFFICULTY = medium`.**
@@ -288,6 +299,17 @@ After parsing the assessment, update `REVIEWER_MEMORY.md` in the project root:
 - Append each round, never delete prior rounds (audit trail)
 - If the reviewer's response includes a "Memory update" section, copy it verbatim
 - This file is passed back to the reviewer in the next round's Phase A — it is the reviewer's persistent memory
+- **Independence boundary（本整合包硬规则）**: what gets *passed into the next
+  round's fresh reviewer* must contain only **objective, checkable facts** —
+  unresolved issue IDs, file paths / line ranges, concrete claims to re-verify.
+  Strip prior-round **scores, verdicts, and subjective judgments** from the
+  injected excerpt (they anchor the new reviewer and break the zero-context
+  guarantee; keep them in the on-disk file for the audit trail only). A
+  memory-informed round is a *resolution check*, not a fully zero-context
+  verdict: when memory is injected, the round's verdict metadata must record
+  `context: memory-informed`, and at least the **final (loop-terminating)
+  positive verdict must come from a truly zero-context, cross-family review**
+  with no memory injection.
 - **If the score REGRESSES round-to-round**, don't just write a new memory line:
   diff the two rounds' raw `.response.md` files in `.aris/traces/` first and find
   the exact criterion that flipped (see `shared-references/review-tracing.md`

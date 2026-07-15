@@ -49,6 +49,12 @@ mcp__codex__codex:
     Current results: [key metrics from experiments]
     Claims: [what we claim and current evidence]
 
+    Raw artifact paths (read these yourself — do not rely on my summary above,
+    which may unintentionally frame or omit):
+    - [path to research_contract.md]
+    - [path to EXPERIMENT_LOG.md / results CSVs]
+    - [path to result-to-claim output]
+
     For each ablation, specify:
     - name: what to change (e.g., "remove module X", "replace Y with Z")
     - what_it_tests: the specific question this answers
