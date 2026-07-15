@@ -46,7 +46,7 @@ Claude Code / Codex / Devin（含网页版）/ Cursor 通用。
       / auto-paper-improvement-loop（论文打磨循环，≤ 2 轮）/ dse-loop（目标导向参数探索）
       / run-experiment + monitor-experiment + experiment-queue（GPU 实验排队/监控，含脚本）
       —— 评审器后端按 shared-references/reviewer-adapter.md 适配：
-      Codex MCP → codex/gemini CLI → Devin 子会话 → 新对话人工中转 → 同模型降级并标注，
+      Codex MCP → codex/gemini CLI → 子智能体/子会话（Claude Code/Cursor/Codex/Devin 四平台均可，零上下文）→ 新对话人工中转 → 同模型降级并标注，
       四平台（Claude Code / Codex / Devin / Cursor）均可用，接不接 MCP 都能跑
 写作/展示增强：result-to-claim（实验结果→论文主张）/ paper-claim-audit（逐主张证据核验）
       / research-review（深度技术评审）/ paper-illustration + figure-description（插图）
