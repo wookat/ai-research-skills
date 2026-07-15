@@ -11,7 +11,9 @@ description: Lightweight pattern-driven research ideation with no script depende
 
 - 研究方向（必需）
 - `gap_matrix.md`（若无，先调用 literature-gap-mining 或做一轮轻量检索）
-- 领域模块 `domains/<领域>.md`（若有，其"已知陷阱/被固化假设"节是重点原料）
+- 领域模块 `domains/<领域>.md`（若有，其"已知陷阱/被固化假设"节是重点原料；若附带
+  `domains/references/` 论文统计（如时序的 ts-forecasting-survey），用其拥挤度梯度
+  避开高密度路线、优先扫描低基数上升区与矛盾格，并注明统计数据时点）
 
 ## 构思模式库（逐个套用，每模式至少认真尝试一次）
 

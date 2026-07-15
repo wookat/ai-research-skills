@@ -31,6 +31,12 @@ Break the claimed **Novelty** into four atomic axes, presented as a labeled list
 
 ### Step 2 — Search and Deduplicate
 
+**Local pre-screen（本整合包增补）**: if the active domain module ships a paper
+survey under `domains/references/` (e.g. `ts-forecasting-survey/comprehensive_report.md`
+for time-series forecasting), grep it for the novelty's keywords first — it is a fast
+offline prior-art candidate source. Local hits feed Step 3 triage alongside online
+results; the online search below is still mandatory (the survey has a cutoff date).
+
 Read the **Research problem** and craft three complementary search queries:
 
 - **Query 1 — Original-Problem:** restate the original research problem.
