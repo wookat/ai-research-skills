@@ -284,7 +284,7 @@ Then read the output and summarize per the rules above.
 
 - **Log the final report.** After completing the search, write a single
   markdown file to:
-  `${CLAUDE_PROJECT_DIR}/allinone.md`
+  `allinone.md` in the current working directory
   - Contents: the full **"Display ALL results from every source"** tables
     followed by the **"Summary of all searched results"** section — in that
     order, with no truncation.

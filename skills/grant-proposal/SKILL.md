@@ -19,7 +19,7 @@ This skill turns validated research ideas into a structured, reviewer-ready gran
 ```
 
 **This is a parallel branch, not part of the linear Workflow 1→1.5→2→3 pipeline.** After `/idea-discovery` produces validated ideas, the user can either:
-- Go to `/experiment-bridge` → `/auto-review-loop` → `/paper-writing` (implement & publish)
+- Go to `/experiment-bridge` → `/auto-review-loop` → `/paper-writing` (implement & publish)（未收录 skill 按 `shared-references/pack-mapping.md` 替换）
 - Go to `/grant-proposal` (write funding application first, then implement after funding)
 
 ```
@@ -29,6 +29,9 @@ This skill turns validated research ideas into a structured, reviewer-ready gran
 ```
 
 Grant proposals argue for **future work** (feasibility + potential), not completed work (results + claims). This skill handles the unique requirements of grant writing: narrative arc design, reviewer-facing structure, budget justification, timeline planning, and agency-specific formatting.
+
+本文件中的 `/experiment-bridge`、`/experiment-plan` 等未收录 skill 引用按
+`shared-references/pack-mapping.md` 替换。
 
 ## Constants
 
@@ -209,7 +212,7 @@ Then gather context from the project directory:
 
 1. Read `idea-stage/IDEA_REPORT.md` if it exists (from `/idea-discovery`); fall back to `./IDEA_REPORT.md` if not found
 2. Read `refine-logs/FINAL_PROPOSAL.md` if it exists (from `/research-refine`)
-3. Read `refine-logs/EXPERIMENT_PLAN.md` if it exists (from `/experiment-plan`)
+3. Read `refine-logs/EXPERIMENT_PLAN.md` if it exists (from `/experiment-plan`; 未收录 skill 按 `shared-references/pack-mapping.md` 替换)
 4. Read `review-stage/AUTO_REVIEW.md` if it exists (from `/auto-review-loop` — prior review feedback is gold for grants); fall back to `./AUTO_REVIEW.md` if not found
 5. Read `NARRATIVE_REPORT.md` or `STORY.md` if they exist
 6. Read any existing literature notes or survey documents

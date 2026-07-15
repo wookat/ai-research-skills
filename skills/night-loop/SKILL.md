@@ -5,6 +5,8 @@ description: Unattended overnight research iteration - runs bounded experiment/t
 
 # Night Loop（无人值守夜跑循环）
 
+完整红线见 `shared-references/research-integrity.md`。
+
 "睡觉时做科研"的安全实现：**只自动化有客观停止条件的工作**，裁决类决策留给
 早晨的人。提炼自 ARIS 的 auto-review-loop / dse-loop 机制与其安全教训。
 

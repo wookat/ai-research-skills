@@ -139,7 +139,7 @@ Create `<outdir>/` if missing.
 ### Step 2 — Extract text + figures + captions
 
 ```bash
-python ~/.claude/skills/paper2assets/scripts/extract_pdf.py <pdf> --outdir <outdir>
+python scripts/extract_pdf.py <pdf> --outdir <outdir>
 ```
 
 Writes:
@@ -151,9 +151,9 @@ Writes:
 **Figures — choose the source by priority (DO THIS; it is the biggest time/token saver).** The paper's ORIGINAL figure graphics are already clean (no baked caption strips, no column-text bleed) and skip the whole Step 5 crop loop (~6 min + heavy tokens). `scripts/source_figures.py` fetches them and writes `assets/figures/*.png` + `figures.json` in seconds:
 
 1. **Provided image links (FIRST):** the user attached/linked figure images →
-   `python ~/.claude/skills/paper2assets/scripts/source_figures.py --images <url|path> … --outdir <outdir>`
+   `python scripts/source_figures.py --images <url|path> … --outdir <outdir>`
 2. **arXiv (RECOMMENDED):** the paper is on arXiv →
-   `python ~/.claude/skills/paper2assets/scripts/source_figures.py --arxiv <id|url> --outdir <outdir>`
+   `python scripts/source_figures.py --arxiv <id|url> --outdir <outdir>`
    (downloads `arxiv.org/e-print/<id>`, parses the `.tex` figure order + captions, rasterizes each graphic).
 3. **Backup (ONLY if 1 & 2 don't apply, or `source_figures.py` exits non-zero):** the PDF crop path below — full `extract_pdf.py` (with figures) **+ Step 5 `crop_figure.py`**.
 
@@ -260,7 +260,7 @@ Downstream renderers should receive **cleaned** figures, not raw extracts, so we
 **5a. `top-check` — strip top chrome residue.**
 
 ```bash
-python ~/.claude/skills/paper2assets/scripts/crop_figure.py top-check <outdir>/assets/figures/<file>.png
+python scripts/crop_figure.py top-check <outdir>/assets/figures/<file>.png
 ```
 
 Pattern-matches the chrome signature (1–15 px non-clean prefix + ≥3 px clean gutter + sustained figure content below). On `TOP-CHROME DETECTED — ... cut at y=Z`, re-run with `--apply` to strip. On `TOP clean — ...`, skip to 5b.
@@ -268,7 +268,7 @@ Pattern-matches the chrome signature (1–15 px non-clean prefix + ≥3 px clean
 **5b. `decaption` — strip baked-in bottom caption strip (when present).**
 
 ```bash
-python ~/.claude/skills/paper2assets/scripts/crop_figure.py decaption <outdir>/assets/figures/<file>.png
+python scripts/crop_figure.py decaption <outdir>/assets/figures/<file>.png
 ```
 
 Fires only when there's a 1–3 line text band at the bottom separated from the figure body by a clear horizontal whitespace gap. Most figures won't trigger. On `DETECTED bottom caption band`, re-run with `--apply`. Otherwise skip to 5c.
@@ -276,7 +276,7 @@ Fires only when there's a 1–3 line text band at the bottom separated from the 
 **5c. `autotrim` — strip remaining uniform white margins (always last).**
 
 ```bash
-python ~/.claude/skills/paper2assets/scripts/crop_figure.py autotrim <outdir>/assets/figures/<file>.png
+python scripts/crop_figure.py autotrim <outdir>/assets/figures/<file>.png
 ```
 
 Strips border rows/cols that are 100% near-white, keeping a `--pad 4` margin. Safe — never touches content pixels. **Must come AFTER 5a/5b** — `autotrim` stops at the first dark row, so any uncut chrome/caption traps a thick whitespace band that `autotrim` cannot reach.
@@ -302,7 +302,7 @@ paper2assets owns this responsibility because:
 
    **Step 5d.i — Analyze (deterministic, grounds the bbox decision in pixels):**
    ```bash
-   python ~/.claude/skills/paper2assets/scripts/crop_figure.py blocks <outdir>/assets/figures/<file>.png
+   python scripts/crop_figure.py blocks <outdir>/assets/figures/<file>.png
    ```
 
    Prints the figure's ROW + COL ink-block structure (every dense band, every gap between bands, in pixel coordinates) plus heuristic hints flagging narrow blocks adjacent to the main body as "INCLUDE in bbox" (axis labels / legend / rotated y-title) versus blocks separated by a wide (>50 px) gap as "EXCLUDE unless visual recheck confirms it's figure content" (likely body-text column or adjacent figure). This output tells you exactly where each structural part of the figure sits in pixel space — no eyeballing dimensions.
@@ -325,8 +325,8 @@ paper2assets owns this responsibility because:
 
    **Step 5d.iii — Mark + Preview (verification gate, never destructive):**
    ```bash
-   python ~/.claude/skills/paper2assets/scripts/crop_figure.py mark    <outdir>/assets/figures/<file>.png --box X0 Y0 X1 Y1
-   python ~/.claude/skills/paper2assets/scripts/crop_figure.py preview <outdir>/assets/figures/<file>.png --box X0 Y0 X1 Y1
+   python scripts/crop_figure.py mark    <outdir>/assets/figures/<file>.png --box X0 Y0 X1 Y1
+   python scripts/crop_figure.py preview <outdir>/assets/figures/<file>.png --box X0 Y0 X1 Y1
    ```
 
    Run BOTH commands per round — they produce a paired set:
@@ -514,7 +514,7 @@ paper2assets owns this responsibility because:
 
    **Step 5d.v — Commit the crop** only after the mark passes verification:
    ```bash
-   python ~/.claude/skills/paper2assets/scripts/crop_figure.py box <outdir>/assets/figures/<file>.png --box X0 Y0 X1 Y1
+   python scripts/crop_figure.py box <outdir>/assets/figures/<file>.png --box X0 Y0 X1 Y1
    ```
 
    Overwrites the PNG (preserving the existing `figures/_debug/<file>.png.bak` from 5a-5c — `crop_figure.py` only writes `.bak` once, never clobbered on re-runs) and updates `figures.json` width/height. **All `figures/_debug/<stem>.marked-<NN>.png` overlays from this figure's mark iterations remain in place** as the auditable history of the bbox decision (paper2assets does NOT include them in its output contract; downstream renderers ignore `_debug/`, and `figures.json` doesn't list it). The hidden `_debug/` subdir is purely a debugging breadcrumb — keeps the top-level `figures/` listing clean while preserving full traceability.
@@ -528,7 +528,7 @@ paper2assets owns this responsibility because:
    When you spot this pattern, **decide one bbox per child figure** (each tight per the 5d.ii rules above), `mark` each, verify each, then commit as a split:
 
    ```bash
-   python ~/.claude/skills/paper2assets/scripts/crop_figure.py split \
+   python scripts/crop_figure.py split \
        <outdir>/assets/figures/<file>.png \
        --box X0a Y0a X1a Y1a --suffix a \
        --box X0b Y0b X1b Y1b --suffix b
@@ -544,7 +544,7 @@ paper2assets owns this responsibility because:
 
 The `inspect` mode is helpful for quickly probing a figure's outer dimensions and pure-white border before deciding a bbox:
 ```bash
-python ~/.claude/skills/paper2assets/scripts/crop_figure.py inspect <outdir>/assets/figures/<file>.png
+python scripts/crop_figure.py inspect <outdir>/assets/figures/<file>.png
 ```
 
 ### Step 5e — Final autotrim pass (mandatory, runs on every figure)
@@ -552,7 +552,7 @@ python ~/.claude/skills/paper2assets/scripts/crop_figure.py inspect <outdir>/ass
 **For each `figures/<file>.png`, after 5d has committed its box crop, run autotrim one more time:**
 
 ```bash
-python ~/.claude/skills/paper2assets/scripts/crop_figure.py autotrim <outdir>/assets/figures/<file>.png
+python scripts/crop_figure.py autotrim <outdir>/assets/figures/<file>.png
 ```
 
 Why this exists as a separate trailing step (not just re-using 5c): 5d's `box` crop is committed from a hand-picked rectangle that the verifier signed off on visually. Visual judgment is coarse at the pixel level — even a tight-looking bbox routinely leaves 2–10 px of pure-white margin on one or more edges (the verifier's eye smooths over thin uniform-white borders the same way it smooths over the top-chrome residue that motivated 5a). `autotrim` is the cheap, safe, deterministic mop-up that strips those residues so the saved PNG's dimensions match the figure's actual content extent.
@@ -571,9 +571,9 @@ This is the **last image-processing step** before the figures leave paper2assets
 > hand-edit these commands.
 
 ```bash
-python ~/.claude/skills/paper2assets/scripts/fetch_logos.py     --from-spec     <outdir>/assets/meta/paper_spec.md --outdir <outdir>
-python ~/.claude/skills/paper2assets/scripts/fetch_conf_logo.py --from-metadata <outdir>/assets/meta/metadata.json --outdir <outdir>
-python ~/.claude/skills/paper2assets/scripts/make_qr.py         --from-metadata <outdir>/assets/meta/metadata.json --outdir <outdir>
+python scripts/fetch_logos.py     --from-spec     <outdir>/assets/meta/paper_spec.md --outdir <outdir>
+python scripts/fetch_conf_logo.py --from-metadata <outdir>/assets/meta/metadata.json --outdir <outdir>
+python scripts/make_qr.py         --from-metadata <outdir>/assets/meta/metadata.json --outdir <outdir>
 ```
 
 > ⚠️ **Flag traps for ALL THREE scripts — DO NOT alter:**
@@ -603,7 +603,7 @@ The deterministic Wikimedia pass gets the easy ones; obscure / non-English / new
    - Pick the **official** mark from the institute's own site / brand-resources page, Wikipedia/Wikimedia, or an official social profile — **skip** stock-photo aggregators, third-party redraws, photos, campus/building shots, and flags. `WebFetch` the page if you need to locate the direct image URL.
    - Download it through the SAME pipeline (autotrim + canonical slug) so it matches the other tiles:
      ```bash
-     python ~/.claude/skills/paper2assets/scripts/fetch_logos.py --outdir <outdir> \
+     python scripts/fetch_logos.py --outdir <outdir> \
        --add-logo "<Institute Name>=<direct image URL>"
      ```
      Repeat `--add-logo "Name=URL"` for each missing institute (the flag is repeatable).
@@ -631,7 +631,7 @@ paper2poster ignores these three files (it reads `paper_spec.md` directly), so t
 **For each completed `<outdir>/`, run this exact sequence after Step 6:**
 
 ```bash
-python ~/.claude/skills/paper2assets/scripts/build_package.py <pdf> \
+python scripts/build_package.py <pdf> \
     --outdir <outdir> \
     --skip-extract \
     --paper-spec <outdir>/assets/meta/paper_spec.md

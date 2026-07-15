@@ -47,7 +47,10 @@ description: Lightweight pattern-driven research ideation with no script depende
 2. 10 个模式 × 候选缺口做笛卡尔扫描，粗筛出 12-20 个组合。
 3. 每个组合展开成 idea card 草稿；淘汰：机制说不具体的、洞察一栏写不出失败归因的、证伪计划写不出来的。
 4. 留 5-10 张卡，按"洞察强度 × 可行性 × 撞车风险（拥挤格降权）"排序。
-5. 输出到 `stage1_ideas/idea_cards.md`，并提示下一步：入选卡逐个过 scoop-check + idea-critic。
+5. 输出到 `research_run/<课题slug>/stage1_ideas/idea_cards.md`，并提示下一步：入选卡逐个过 scoop-check + idea-critic。
+
+**本整合包契约：**产物写 `research_run/<课题slug>/stage1_ideas/idea_cards.md`（单文件，
+包含多个候选卡）；脱离 `research-pipeline` 单独调用时，退当前工作目录。
 
 ## 纪律
 

@@ -5,6 +5,8 @@ argument-hint: "[invention-description — jurisdiction]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Skill, mcp__codex__codex
 ---
 
+若检索或评审 MCP 不可用，按 `../shared-references/reviewer-adapter.md` 的降级指引执行。
+
 # Patent Pipeline: From Invention to Filing
 
 Draft a complete patent application based on: **$ARGUMENTS**
@@ -21,7 +23,7 @@ This skill orchestrates the full patent drafting lifecycle -- from prior art sea
 ```
 
 **This is a parallel branch, not part of the linear research pipeline.** After `/idea-discovery` produces validated ideas, the user can either:
-- Go to `/experiment-bridge` → `/auto-review-loop` → `/paper-writing` (publish track)
+- Go to `/experiment-bridge` → `/auto-review-loop` → `/paper-writing` (publish track)（未收录 skill 按 `shared-references/pack-mapping.md` 替换）
 - Go to `/grant-proposal` (funding track)
 - Go to `/patent-pipeline` (patent track) **<-- this skill**
 
@@ -33,6 +35,9 @@ This skill orchestrates the full patent drafting lifecycle -- from prior art sea
 ```
 
 Patents are about **protecting inventions** (legal scope), not publishing results (academic contribution). This skill handles the unique requirements of patent drafting: prior art analysis, claims hierarchy design, specification writing with enablement support, embodiment descriptions, and jurisdiction-specific formatting.
+
+本文件中的 `/experiment-bridge`、`/experiment-plan`、`/check-gpu` 等未收录 skill
+引用按 `shared-references/pack-mapping.md` 替换。
 
 ## Constants
 

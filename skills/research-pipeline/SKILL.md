@@ -29,7 +29,7 @@ research_run/<slug>/
 | 阶段 | Skill | 产物 | 决策卡 |
 |---|---|---|---|
 | 0 文献与缺口 | literature-gap-mining（检索引擎用 paper-search） | lit_table.md, gap_matrix.md | — |
-| 1 创新点挖掘 | idea-spark（脚本化重型，首选）或 idea-mining（轻量无依赖） | idea_cards/ | **#1 选 idea** |
+| 1 创新点挖掘 | idea-spark（脚本化重型，首选）或 idea-mining（轻量无依赖） | stage1_ideas/idea_cards.md | **#1 选 idea**。idea-spark = 单点深挖（一次深入一个方向，产 1 张高质量卡）；需要一次产出多个候选做决策卡#1 时用 idea-mining。两者产物都落 stage1_ideas/。 |
 | 2 防撞车 | scoop-check（脚本化，依赖 paper-search） | scoop_report.md（每个入选 idea 一份） | — |
 | 3 洞察评审 | idea-critic | critique_card.md | **#2 立项拍板** |
 | 4 实验循环 | experiment-loop（子技能：reproduce / compare / debug / experiment-design / ablation-planner / analyze-results / statistical-testing / dataset-curation / launch；无人值守用 night-loop，大批量任务用 experiment-queue / run-experiment / monitor-experiment，参数探索用 dse-loop） | hypothesis_tree.md, results/, ablations/ | **#3 结果定夺** |
@@ -40,6 +40,10 @@ research_run/<slug>/
 | ⊕ 录用后 | research-publishing（开源代码/复现包）；宣传用 paper2poster / paper2video / paper2reel / paper2blog 或 paper-poster-html / paper-slides / paper-talk | 代码仓库、宣传物料 | — |
 | ⊕ 专利 | patent-pipeline（编排 invention-structuring → prior-art-search → patent-novelty-check → claims-drafting → specification-writing → patent-review → jurisdiction-format），建议与投稿并行启动（专利优先权日越早越好） | 专利申请文件 | — |
 | ⊕ 持续 | arxiv-radar（阶段4起每 2 周；投稿前/rebuttal 期必跑） | radar_log.md | 红色预警时临时决策卡 |
+
+**全局强制说明：**每个阶段 skill 结束后，编排者负责确认产物已落到
+`research_run/<slug>/stageN/` 规范路径，缺失则搬运；下一阶段只从规范路径读取，
+不依赖对话记忆。
 
 阶段 2 失败（撞车）→ 回到阶段 1 换 idea；阶段 3 判"需 pivot" → 回阶段 1；
 阶段 4 假设被证伪 → 在阶段 4 内部迭代（见 experiment-loop），连续两轮无进展 → 出决策卡回阶段 1。

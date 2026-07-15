@@ -5,6 +5,8 @@ description: Hypothesis-driven experiment loop with fair-comparison discipline -
 
 # Experiment Loop（实验循环）
 
+完整红线见 `shared-references/research-integrity.md`。
+
 把一个已立项的 idea 变成一条闭合的证据链。核心纪律：**假设先行、公平对比、失败归因**。
 
 本 skill 是实验阶段的编排层；具体操作委托给同包的四个专项 skill：
@@ -67,6 +69,10 @@ description: Hypothesis-driven experiment loop with fair-comparison discipline -
 - `evidence_summary.md`：主张→证据映射表（`Claim | Experiment ID | Status`），
   直接供 paper-writing 使用
 - 决策卡 #3：核心结果、证据链完整度、建议（写作 / 补实验 / pivot）
+
+**本整合包契约：**产物写
+`research_run/<课题slug>/stage4_experiments/`（`hypothesis_tree.md`、`results/`、
+`ablations/`）；脱离 `research-pipeline` 单独调用时，退当前工作目录。
 
 ## 纪律
 

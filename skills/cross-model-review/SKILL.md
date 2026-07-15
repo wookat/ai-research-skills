@@ -5,6 +5,8 @@ description: Fresh-context cross-model review protocol that prevents self-congra
 
 # Cross-Model Review（跨模型/零上下文评审协议）
 
+完整红线见 `shared-references/research-integrity.md`。
+
 评审最大的失效模式是**自我开脱**：同一个上下文里"改完再评"，分数会虚高。
 ARIS 的实证结论：同线程续评把真实 3/10 的论文逐轮刷到虚假 8/10；换成零上下文
 新线程后恢复真实 3/10。本 skill 把这条纪律固化为协议，供包内所有 verdict 类

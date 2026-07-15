@@ -5,6 +5,8 @@ argument-hint: "[paper-directory-or-talk-length] [— style-ref: <source>]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, mcp__codex__codex, mcp__codex__codex-reply
 ---
 
+若检索或评审 MCP 不可用，按 `../shared-references/reviewer-adapter.md` 的降级指引执行。
+
 # Paper Slides: From Paper to Conference Talk
 
 Generate conference presentation slides from: **$ARGUMENTS**

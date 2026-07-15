@@ -29,6 +29,10 @@ dependencies:
 last_updated: "2026-03-17"
 ---
 
+**本整合包契约：**产物写
+`research_run/<课题slug>/stage7_rebuttal/rebuttal.md`（或流水线约定的
+`stage7_rebuttal/` 对应位置）；脱离 `research-pipeline` 单独调用时，退当前工作目录。
+
 # Rebuttal Writing
 
 > **TL;DR** — Structured academic peer-review response writing. Covers point-by-point

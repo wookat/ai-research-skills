@@ -1,6 +1,6 @@
 ---
 name: compare
-description: Same-epoch comparison of training runs across wandb, neptune, tensorboard, or mlflow. Aligns runs at the student's current step (never current-vs-final-of-baseline) and separates proxy metrics from downstream targets. Use when the user asks to compare runs, check if a run is improving, track lag against a baseline, rank experiments, or evaluate run-vs-run performance.
+description: Same-epoch comparison of training runs across wandb, neptune, tensorboard, or mlflow. Aligns runs at the student's current step (never current-vs-final-of-baseline) and separates proxy metrics from downstream targets. Use when the user asks to compare runs, check if a run is improving, track lag against a baseline, rank experiments, or evaluate run-vs-run performance. Do not use for statistical interpretation of completed result tables (use analyze-results).
 ---
 
 # Compare: same-epoch run comparison across trackers

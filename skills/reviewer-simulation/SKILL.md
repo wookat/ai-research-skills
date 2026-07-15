@@ -5,6 +5,12 @@ description: Simulate a full peer-review round on a finished paper draft with mu
 
 # Reviewer Simulation（投稿前模拟评审）
 
+⚠ 本 skill 属 verdict 类评审，必须遵守
+`../cross-model-review` 协议：在零上下文新线程、优先跨模型的条件下出具评审，
+只读被评对象，禁止在产生/修改该对象的同一上下文里自评（否则会把真实 3/10 刷成虚假 8/10）。
+无法换线程/换模型时，按 `shared-references/reviewer-adapter.md` 降级并在结论标注
+self-review 可能虚高。
+
 对完整论文草稿做一轮真实格式的模拟评审。输入：论文草稿 + claim-evidence map + 目标会议。
 
 ## 评审 persona（各自独立成篇，禁止互相妥协）
@@ -49,3 +55,7 @@ Rating: 1-10 + Confidence: 1-5
 - 每条 weakness 必须具体到可执行（"实验不够"不合格；"缺少与 X 在数据集 Y 上的对比，
   因为 X 是该设定下的公认 SOTA"合格）。
 - 发现主张-证据不匹配时按最高严重度上报，这是真实评审中最致命的一类问题。
+
+**本整合包契约：**产物写
+`research_run/<课题slug>/stage6_review/mock_reviews.md`；脱离
+`research-pipeline` 单独调用时，退当前工作目录。

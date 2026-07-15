@@ -6,6 +6,8 @@ description: >
   Triggers on phrases like "design ablation", "plan experiment",
   "what experiments should I run", "baseline comparison", or
   "experiment matrix".
+  Do not use for ablation-planner requests after main results pass result-to-claim
+  (use ablation-planner).
 ---
 
 # Experiment Design Methodology

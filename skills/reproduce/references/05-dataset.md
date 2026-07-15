@@ -1,5 +1,7 @@
 # Stage 5: Dataset acquisition
 
+若 Hugging Face 或其他检索 MCP 不可用，按 `../../shared-references/reviewer-adapter.md` 的降级指引，改用本包 `paper-search` 或 agent 自带 web 检索。
+
 The dataset is the hardest part of most reproductions. Public datasets are usually fine; private datasets require a substitution decision that needs to be documented honestly.
 
 ## Public dataset path

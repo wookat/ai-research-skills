@@ -27,14 +27,14 @@ Generate publication-quality illustrations using a **multi-stage workflow** with
 │          ▼                                                               │
 │   ┌─────────────┐                                                        │
 │   │   Gemini    │ ◄─── Step 2: Optimize layout description               │
-│   │ (gemini-3-pro)│      - Refine component positioning                    │
+│   │ (REASONING_MODEL)│   - Refine component positioning                    │
 │   │  Layout     │      - Optimize spacing and grouping                   │
 │   └──────┬──────┘                                                        │
 │          │                                                               │
 │          ▼                                                               │
 │   ┌─────────────┐                                                        │
 │   │   Gemini    │ ◄─── Step 3: CVPR/NeurIPS style verification          │
-│   │ (gemini-3-pro)│      - Check color palette compliance                  │
+│   │ (REASONING_MODEL)│   - Check color palette compliance                  │
 │   │  Style      │      - Verify arrow and font standards                 │
 │   └──────┬──────┘                                                        │
 │          │                                                               │
@@ -65,12 +65,17 @@ Generate publication-quality illustrations using a **multi-stage workflow** with
 
 ## Constants
 
-- **IMAGE_MODEL = `gemini-3-pro-image-preview`** — Paperbanana (Nano Banana Pro) for image rendering
-- **REASONING_MODEL = `gemini-3-pro-preview`** — Gemini for layout optimization and style checking
+- **IMAGE_MODEL = `${IMAGE_MODEL:-gemini-3-pro-image-preview}`** — Paperbanana default for image rendering; override with `IMAGE_MODEL`.
+- **REASONING_MODEL = `${REASONING_MODEL:-gemini-3-pro-preview}`** — default for layout optimization and style checking; override with `REASONING_MODEL`.
 - **MAX_ITERATIONS = 5** — Maximum refinement rounds
 - **TARGET_SCORE = 9** — Minimum acceptable score (1-10) — RAISED FOR QUALITY
 - **OUTPUT_DIR = `figures/ai_generated/`** — Output directory
 - **API_KEY_ENV = `GEMINI_API_KEY`** — Environment variable
+
+If no Gemini API key is available, or the platform does not support the configured
+Gemini models, fall back to `mermaid-diagram` / `data-visualization` to generate a
+schematic or vector placeholder. Mark the artifact
+`illustration generated via fallback`.
 
 ## Optional: Style reference (`— style-ref: <source>`, opt-in)
 
@@ -309,13 +314,13 @@ VERIFY: Each arrow must point to the CORRECT target!
 [Any specific requirements from user]
 ```
 
-### Step 2: Gemini Layout Optimization (gemini-3-pro)
+### Step 2: Layout Optimization (`REASONING_MODEL`)
 
-**Claude sends the initial prompt to Gemini (gemini-3-pro) for layout optimization.**
+**Claude sends the initial prompt to the configured `REASONING_MODEL` for layout optimization.**
 
 ```bash
 #!/bin/bash
-# Step 2: Optimize layout using Gemini gemini-3-pro
+# Step 2: Optimize layout using the configured reasoning model
 # This step refines component positioning and spacing
 
 set -e
@@ -324,7 +329,7 @@ OUTPUT_DIR="figures/ai_generated"
 mkdir -p "$OUTPUT_DIR"
 
 API_KEY="${GEMINI_API_KEY}"
-URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=$API_KEY"
+URL="https://generativelanguage.googleapis.com/v1beta/models/${REASONING_MODEL:-gemini-3-pro-preview}:generateContent?key=$API_KEY"
 
 # The initial prompt from Claude
 INITIAL_PROMPT='[Claude fills in the detailed prompt here]'
@@ -377,16 +382,16 @@ echo "$LAYOUT_DESCRIPTION"
 echo "$LAYOUT_DESCRIPTION" > "$OUTPUT_DIR/layout_description.txt"
 ```
 
-### Step 3: Gemini Style Verification (gemini-3-pro)
+### Step 3: Style Verification (`REASONING_MODEL`)
 
 **Claude sends the optimized layout to Gemini for CVPR/NeurIPS style verification.**
 
 ```bash
 #!/bin/bash
-# Step 3: Verify and enhance style compliance using Gemini gemini-3-pro
+# Step 3: Verify and enhance style compliance using the configured reasoning model
 
 API_KEY="${GEMINI_API_KEY}"
-URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=$API_KEY"
+URL="https://generativelanguage.googleapis.com/v1beta/models/${REASONING_MODEL:-gemini-3-pro-preview}:generateContent?key=$API_KEY"
 
 # Read layout from previous step
 LAYOUT=$(cat figures/ai_generated/layout_description.txt)
@@ -440,13 +445,13 @@ echo "$STYLE_SPEC"
 echo "$STYLE_SPEC" > "figures/ai_generated/style_spec.txt"
 ```
 
-### Step 4: Paperbanana Image Rendering (gemini-3-pro-image-preview)
+### Step 4: Paperbanana Image Rendering (`IMAGE_MODEL`)
 
 **Claude sends the optimized, style-verified specification to Paperbanana for rendering.**
 
 ```bash
 #!/bin/bash
-# Step 4: Render image using Paperbanana (gemini-3-pro-image-preview)
+# Step 4: Render image using Paperbanana (`IMAGE_MODEL`)
 # Internal codename: Nano Banana Pro
 # Use DIRECT connection (no proxy) - proxy causes SSL errors
 
@@ -456,7 +461,7 @@ OUTPUT_DIR="figures/ai_generated"
 mkdir -p "$OUTPUT_DIR"
 
 API_KEY="${GEMINI_API_KEY}"
-URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=$API_KEY"
+URL="https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL:-gemini-3-pro-image-preview}:generateContent?key=$API_KEY"
 
 # Read the style-enhanced specification from previous step
 STYLE_SPEC=$(cat figures/ai_generated/style_spec.txt)
@@ -709,7 +714,7 @@ When figure is accepted (score ≥ 9):
 9. **VISUAL APPEAL MATTERS** — Plain boring figures = score ≤ 8
 10. **Target score is 9** — Not 8, not "good enough"
 11. **USE MULTI-STAGE WORKFLOW** — Claude → Gemini Layout → Gemini Style → Paperbanana → Claude Review
-12. **USE CORRECT MODELS** — gemini-3-pro for reasoning, gemini-3-pro-image-preview for rendering
+12. **USE CONFIGURED MODELS** — `REASONING_MODEL` for reasoning, `IMAGE_MODEL` for rendering
 
 ## Output Structure
 
@@ -730,7 +735,7 @@ figures/ai_generated/
 | Stage | Model | Purpose |
 |-------|-------|---------|
 | Step 1 | Claude | Parse request, create initial prompt |
-| Step 2 | gemini-3-pro | Layout optimization (positioning, spacing, grouping) |
-| Step 3 | gemini-3-pro | CVPR/NeurIPS style verification |
-| Step 4 | gemini-3-pro-image-preview (Paperbanana) | High-quality image rendering |
+| Step 2 | `REASONING_MODEL` | Layout optimization (positioning, spacing, grouping) |
+| Step 3 | `REASONING_MODEL` | CVPR/NeurIPS style verification |
+| Step 4 | `IMAGE_MODEL` (Paperbanana) | High-quality image rendering |
 | Step 5 | Claude | STRICT visual review and scoring |

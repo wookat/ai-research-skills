@@ -39,6 +39,13 @@ python3 "$SKILL_DIR/scripts/run.py" check_connectors   # from the SAME shell you
 
 Credentials go in `.env` (OpenReview user/pass + Semantic Scholar key — see setup.md); the orchestrator auto-loads it. Optional: `xelatex`/`tectonic` for PDF cards.
 
+### Research-pipeline handoff
+
+收尾时，把最终 idea 卡片复制/汇总到
+`research_run/<课题slug>/stage1_ideas/` 下，并写入或追加
+`research_run/<课题slug>/stage1_ideas/idea_cards.md` 索引。脱离
+`research-pipeline` 单独调用时，退当前工作目录。
+
 ---
 
 ## How to run: the `next` loop
@@ -239,3 +246,9 @@ By default every model-driven phase runs on the host LLM. To route phases to a d
 Each is a CLI taking a stdin prompt (`<<SYSTEM>>...<<USER>>...`) and emitting JSON on stdout. When unset (the default when running inside any host LLM), the orchestrator emits sentinel files and the host LLM handles those steps natively.
 
 - `IDEASPARK_DEFAULT_COMPUTE` — optional standing compute profile for the user (free text, e.g. `"8×H100 node, ~300 GPU-days, $50k API budget"`). Put it in `.env` (auto-loaded); `next` surfaces it to Phase 1 as intake context. Precedence: compute stated in the user's query > this value > the factory default (80GB-class GPUs, ≤8 concurrent, ≈150 GPU-days / 5 months, ~$10k API campaign). Use this instead of editing the factory default — the default is the feasibility yardstick for users who state nothing.
+
+## Pipeline handoff (final step)
+
+把最终 idea 卡片复制/汇总到 `research_run/<课题slug>/stage1_ideas/` 下，并写入或追加
+`research_run/<课题slug>/stage1_ideas/idea_cards.md` 索引；该阶段只产 1 张高质量卡。
+脱离 `research-pipeline` 单独调用时，退当前工作目录。

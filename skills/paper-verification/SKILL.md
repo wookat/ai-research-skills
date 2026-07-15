@@ -6,6 +6,7 @@ description: >
   citation accuracy. Triggers on phrases like "verify claims",
   "check numbers", "do the numbers match", "formula vs code",
   "audit the paper", or "cross-check results".
+  Do not use for paper-only claim wording and citation audit (use paper-claim-audit).
 ---
 
 # Paper Verification Methodology

@@ -5,6 +5,12 @@ description: Judge whether a research idea contains genuine insight (vs. combina
 
 # Idea Critic（洞察性评审）
 
+⚠ 本 skill 属 verdict 类评审，必须遵守
+`../cross-model-review` 协议：在零上下文新线程、优先跨模型的条件下出具评审，
+只读被评对象，禁止在产生/修改该对象的同一上下文里自评（否则会把真实 3/10 刷成虚假 8/10）。
+无法换线程/换模型时，按 `shared-references/reviewer-adapter.md` 降级并在结论标注
+self-review 可能虚高。
+
 在投入实验和写作之前，判定一个 idea 是**真洞察**还是**排列组合式缝合**，并预演审稿人的攻击。
 输入：一张 idea card（或等价描述）+ 可选的 scoop_report.md + 领域模块 `domains/<领域>.md`。
 
@@ -56,6 +62,10 @@ description: Judge whether a research idea contains genuine insight (vs. combina
 
 - `references/novelty_gate.md` — 新颖性 pass/fail 判据与输出模板（补充第一层判定）
 - `references/roles.md` — 多角色评审的角色定义（补充第三层 persona 设计）
+
+**本整合包契约：**产物写
+`research_run/<课题slug>/stage3_critique/critique_card.md`；脱离
+`research-pipeline` 单独调用时，退当前工作目录。
 
 ## 纪律
 

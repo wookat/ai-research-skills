@@ -5,6 +5,8 @@ argument-hint: "[paper-dir] [— talk_type: oral | spotlight | poster-talk | inv
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Skill, mcp__codex__codex
 ---
 
+若检索或评审 MCP 不可用，按 `../shared-references/reviewer-adapter.md` 的降级指引执行。
+
 # Paper Talk: End-to-End Conference Talk Pipeline
 
 Workflow: from a completed paper to a conference-ready talk artifact —

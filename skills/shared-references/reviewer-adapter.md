@@ -33,3 +33,10 @@ citation-audit / patent-review / proof-checker 等）在调用外部评审器
 - SSH/GPU 相关 skill（experiment-queue / run-experiment / monitor-experiment）
   需要用户提供可 SSH 的 GPU 服务器；无远端时把命令降级到本机 shell 执行
   （screen/tmux 语义不变），Devin 上可直接用其虚拟机作为"本机"。
+
+## 非评审类 MCP 的降级
+
+- `mcp__tavily__*`、`mcp__claude_ai_Hugging_Face__*` 等检索类 MCP 缺失时，
+  退化到本包 `paper-search` 脚本或 agent 自带 web 检索，并在产物中记录降级。
+- `mcp__oracle__consult`、`mcp__gemini_review__review` 属于评审后端，按上表的
+  fresh-thread 与降级规则处理，不按检索类 MCP 处理。
