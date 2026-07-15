@@ -33,6 +33,14 @@ Autonomously iterate: review → implement fixes → re-review, until the extern
 
 This skill uses **any OpenAI-compatible API** for external review via the `llm-chat` MCP server.
 
+> **平台适用性**：下面的 `llm-chat` MCP 配置（`~/.claude/settings.json`、
+> `/Users/<name>/...` 路径）是 **Claude Code 专属示例**（路径按自己系统改写；
+> Windows/Linux 无 `/Users/`）。Codex / Devin / Cursor 无此 MCP 机制时，
+> 不要尝试配置它——直接用同目录的 `auto-review-loop` +
+> `shared-references/reviewer-adapter.md` 的降级链（codex/gemini CLI →
+> Devin 子会话 → 新对话人工中转），或改用环境变量方式直接 `curl` 调
+> OpenAI 兼容 API。
+
 ### Configuration via MCP Server (Recommended)
 
 Add to `~/.claude/settings.json`:

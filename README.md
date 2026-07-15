@@ -75,6 +75,24 @@ CLI / 子会话 / 新对话人工中转，四平台都能用。
 
 `domains/` 目录与 skills 平级放置；各 skill 会按需读取 `domains/<领域>.md`。
 
+### 全局安装时 domains/ 与 tools/ 的解析顺序
+
+skill 被全局安装（如 `~/.claude/skills/`）、从任意项目目录调用时，`domains/<领域>.md`
+与 `tools/<helper>` 按以下顺序解析，取第一个命中：
+
+1. **项目根**：当前项目根目录下的 `domains/` / `tools/`（项目内拷贝了本包，或手工放置）。
+2. **相对本 skill 定位**：`<SKILL.md 所在目录>/../../domains/`（即包安装目录内、与
+   `skills/` 平级的 `domains/`、`tools/`）。全局安装时请把 `domains/`、`tools/` 与
+   `skills/` 一起拷到同一父目录下。
+3. **显式环境变量**：`AI_RESEARCH_SKILLS_HOME=<包根目录>`（或兼容旧名 `ARIS_REPO`）。
+4. **全局指针文件** `~/.aris/repo`：在包根目录运行一次 `bash install.sh` 即可写入
+   （本包自带该最小安装器，不依赖任何外部 `install_aris*.sh` / `smart_update.sh`）。
+
+三、四两层解析的是同一个包根路径；`tools/run_state.py`、`tools/iteration_log.py`
+等脚本型 helper 都走这条链（见 `skills/shared-references/integration-contract.md` §2）。
+均未命中时：`domains/` 缺失按通用 ML 研究处理并在 state.md 记录；脚本型 helper
+按各 skill 声明的 Policy（hard-fail 或 warn-and-skip）处理。
+
 ## 用法
 
 对 agent 说自然语言即可，例如：

@@ -29,9 +29,16 @@ dependencies:
 last_updated: "2026-03-17"
 ---
 
-**本整合包契约：**产物写
-`research_run/<课题slug>/stage7_rebuttal/rebuttal.md`（或流水线约定的
-`stage7_rebuttal/` 对应位置）；脱离 `research-pipeline` 单独调用时，退当前工作目录。
+**本整合包契约：**产物写 `research_run/<课题slug>/stage7_rebuttal/`；脱离
+`research-pipeline` 单独调用时，退当前工作目录。按场景分三种模式：
+
+1. **会议 rebuttal**（不可改稿、短周期、字数受限）→ `stage7_rebuttal/rebuttal.md`，
+   用 Section 4/5 的分诊与策略；rebuttal 实验按 `references/rebuttal-strategy.md` 排期。
+2. **期刊 major revision / 重投**（可改稿）→ `stage7_rebuttal/response_letter.md`
+   （本文件的 LaTeX 模板 + cover letter 节）+ 修改稿 change log/latexdiff
+   （`stage7_rebuttal/manuscript_diff/`）；在 `state.md` 记录 resubmission 截止日期。
+3. **被拒转投**：逐条消化审稿意见（不可反驳的按 major revision 处理修改稿）→
+   回阶段 6 重跑自审 → 出临时决策卡定新 venue → 按新 venue 格式重排后再投。
 
 # Rebuttal Writing
 

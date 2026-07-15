@@ -42,6 +42,12 @@ description: Convert one or more published/submitted conference papers into a ma
 
 `thesis/` 目录：学校模板 LaTeX 工程、按章分文件、全局符号表、图表资产、参考文献库。
 
+**本整合包契约：**`thesis/` 落在
+`research_run/<课题slug>/stage8_thesis/thesis/`；骨架规划的决策卡写
+`decision_cards/`。脱离 `research-pipeline` 单独调用时，退当前工作目录。
+同时遵守 `shared-references/research-integrity.md` 红线（尤其：查重与 AIGC/LLM
+使用声明按学校规定如实处理，禁止为降重而扭曲实验事实）。
+
 ## 纪律
 
 - 学位论文的第一读者是答辩委员会：预备知识宁多勿少，逻辑链宁细勿跳。

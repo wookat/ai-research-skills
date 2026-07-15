@@ -35,7 +35,9 @@ description: Adversarial attack-defense exercise on a near-final paper - a fresh
 
 ## 输出
 
-`stage6_review/kill_argument.md`（memo + 分类表 + 修复清单）。修复执行后**不重跑
+**本整合包契约：**写入
+`research_run/<课题slug>/stage6_review/kill_argument.md`（memo + 分类表 + 修复清单）；
+脱离 `research-pipeline` 单独调用时，退当前工作目录。修复执行后**不重跑
 本演习刷结论**；修复是否到位由下一轮 reviewer-simulation 检验。
 
 ## 纪律

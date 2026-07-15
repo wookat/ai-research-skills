@@ -1,5 +1,8 @@
 # Audio narration reference
 
+> `<skills-dir>` = 本包 skills 的安装目录（如项目内 `skills/`、`.agents/skills/`、
+> `~/.claude/skills/`，随平台）——不要假设固定为 `~/.claude/skills/`。
+
 How the per-section narration MP3s are produced so the poster's Listen
 buttons work. Read this at **Step 5 — Synthesize narration audio** in
 paper2poster's `SKILL.md`.
@@ -45,7 +48,7 @@ prose — no markdown / HTML / `<strong>`; TTS reads numerals and `%` fine.
 ## 2. Synthesize (paper2poster Step 5)
 
 ```bash
-python ~/.claude/skills/paper2poster/scripts/generate_audio.py \
+python <skills-dir>/paper2poster/scripts/generate_audio.py \
     <outdir>/assets/meta/narration.json --outdir <outdir>/assets/audio
 ```
 

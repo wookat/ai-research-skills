@@ -46,7 +46,7 @@ Read the **Research problem** and craft three complementary search queries:
 - **Query 3 — Method-Signature:** the specific technical move, ~5–8 words.
   *Example:* `consistency model knowledge distillation`
 
-Send all three queries to the **`paper-search`** skill (located in `.claude/skills/`). `paper-search` runs a unified query across multiple sources and returns structured JSON with title, abstract, and metadata.
+Send all three queries to the **`paper-search`** skill (bundled in this pack, sibling to this skill: `../paper-search/`; resolve relative to the installed skills directory, whatever the platform — do not assume `.claude/skills/`). `paper-search` runs a unified query across multiple sources and returns structured JSON with title, abstract, and metadata.
 
 Because the three queries hit arXiv as separate process invocations, pace them so adjacent arXiv requests are **≥ 4 s apart** to avoid triggering the rate limit (HTTP 429) that silently zeroes out the connector. `paper-search`'s arXiv module enforces this automatically via a cross-process file lock (`arxiv_search_throttle.lock` in the temp dir), so concurrent/back-to-back queries queue and each request fires ≥ 4 s after the previous one — you do not need to add manual sleeps, but do not bypass that module by calling arXiv directly. Override the interval only via the `ARXIV_MIN_INTERVAL` env var if needed.
 
@@ -202,5 +202,5 @@ Render the final report inline in the conversation as a single, self-contained m
 
 - **Negative results are valuable.** A thorough search that returns nothing is itself evidence of novelty — document the queries used.
 - **Persist the report（本整合包契约）.** In addition to displaying it, write the complete final report to `research_run/<课题slug>/stage2_scoop/scoop_report.md`（若不在 research-pipeline 流水线中，写到当前工作目录 `scoop_report.md`）。Downstream stages read the file, not the chat.
-- **Log every step.** After completing each step, write a markdown file to `${CLAUDE_PROJECT_DIR:-$PWD}/step{step_number}.md` containing the step number, step name, timestamp, and the full structured result of that step. This produces one file per step, enabling downstream tooling to inspect intermediate results.
+- **Log every step.** After completing each step, write a markdown file to `research_run/<课题slug>/stage2_scoop/step{step_number}.md` (when running inside the `research-pipeline`; standalone, fall back to `./step{step_number}.md` in the current working directory) containing the step number, step name, timestamp, and the full structured result of that step. This produces one file per step, enabling downstream tooling to inspect intermediate results.
 - **Display the full report.** Provide the complete detailed report — including all search results, analysis, and reasoning — not just a summary.

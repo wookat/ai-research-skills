@@ -9,6 +9,9 @@ description: >
 
 # Dataset Curation Methodology
 
+本 skill 遵守 `shared-references/research-integrity.md` 红线（尤其：数据集
+license 与数据治理、隐私/PII、伦理审查相关条款）。
+
 You are helping a researcher curate, analyze, or expand a dataset with attention to bias, fairness, and quality.
 
 ## Step 1: Distribution Analysis

@@ -4,6 +4,9 @@ description: Improve academic paper writing quality for ML/CV/NLP-style papers w
 ---
 # Research Paper Writing
 
+本 skill 遵守 `shared-references/research-integrity.md` 红线（尤其：不得为主张好看
+而超出证据范围；需按目标 venue 要求处理 LLM 使用声明与署名规范）。
+
 ## Overview
 
 Use this skill to rewrite a research paper into a reviewer-friendly, high-clarity draft.
@@ -98,3 +101,8 @@ When asked to rewrite or draft sections, return:
 2. Revised paragraphs with explicit paragraph roles (opening/challenge/method/advantage/evidence/limitation).
 3. A short self-review checklist covering clarity, flow, terminology consistency, unsupported claims, and missing evidence.
 4. A claim-evidence map for each major claim in the revised text using `Claim: ... | Evidence: ... | Status: supported/needs evidence`.
+
+**本整合包契约：**除在对话中返回上述内容外，论文草稿与修改后的全部正文必须落盘到
+`research_run/<课题slug>/stage5_paper/`（`main.tex` 或 `draft.md`，含 claim-evidence map）；
+下游阶段（reviewer-simulation 等）只读该路径，不读对话。脱离 `research-pipeline`
+单独调用时，退当前工作目录。

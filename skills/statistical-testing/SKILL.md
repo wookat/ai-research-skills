@@ -32,6 +32,18 @@ last_updated: "2026-03-17"
 
 # Statistical Testing
 
+**本整合包适配（ML/时序实验小样本规则）：**
+
+- **n=3 种子不要报 p 值**——检验功效不足，任何"显著"都不可信；报均值±标准差
+  （`mean ± std`，不要写"方差"除非真的报的是 variance）或极差。
+- **≥5 种子**才考虑显著性检验；同种子/同数据集天然配对，用配对检验
+  （小样本首选 Wilcoxon signed-rank；分布近似正态可用 paired t-test）。
+- **时序预测特有注意**：不同预测长度（96/192/336/720）与不同数据集的误差不可
+  合并成一个总体做检验（分布不同质）；按（数据集, horizon）分层比较。滚动
+  评测窗口之间高度自相关，不满足独立样本假设，不要把窗口当独立观测灌进 t 检验。
+- **多重比较**：数据集 × horizon × baseline × 指标的全组合检验必须做
+  Holm 或 Benjamini-Hochberg FDR 校正，否则只对预先指定的主对比做检验。
+
 Choose and execute the right statistical test for your data. This skill covers
 normality checks, parametric and non-parametric tests, effect size computation,
 and multiple comparison correction.

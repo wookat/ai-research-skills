@@ -10,11 +10,11 @@ allowed-tools: Bash(*), Read, Grep, Glob, Write, Edit, Skill, mcp__codex__codex,
 # Auto Review Loop: Autonomous Research Improvement
 
 > 🔒 **Do not wrap this skill in `/loop`, `/schedule`, or `CronCreate`.** It
-> already loops internally (review → fix → re-review) and the reviewer carries
-> round-to-round memory in one `threadId` (`codex-reply`). An external timer
-> re-enters from the top each tick — fresh `threadId`, reviewer memory reset —
-> firing the verdict on wall-clock time instead of on artifact change: zero new
-> signal, full token cost. If you want to schedule something, schedule the
+> already loops internally (review → fix → re-review), with round-to-round
+> continuity carried in `review-stage/AUTO_REVIEW.md` + `REVIEWER_MEMORY.md`
+> (each round's review call is fresh — see REVIEWER_BIAS_GUARD). An external
+> timer re-enters from the top each tick, firing the verdict on wall-clock time
+> instead of on artifact change: zero new signal, full token cost. If you want to schedule something, schedule the
 > *external wait that precedes it* (experiments done → then run this once). See
 > [`shared-references/external-cadence.md`](../shared-references/external-cadence.md).
 
@@ -30,6 +30,19 @@ Autonomously iterate: review → implement fixes → re-review, until the extern
 - REVIEWER_MODEL = `gpt-5.6-sol` — Default model for the Codex backend. Must be an OpenAI model (e.g., `gpt-5.6-sol`, `o3`, `gpt-4o`). Manual backend uses whatever model the user chooses.
 - **REVIEWER_BACKEND = `codex`** — Default: Codex MCP (xhigh). Override with `— reviewer: oracle-pro` for Oracle MCP, or `— reviewer: manual` for Manual Review MCP. If manual-review MCP is unavailable, stop and print the install command; do not fall back to Codex. See `shared-references/reviewer-routing.md`.
 - **OUTPUT_DIR = `review-stage/`** — All review-stage outputs go here. Create the directory if it doesn't exist.
+- **REVIEWER_BIAS_GUARD = true** — When `true` (default), **every review round is a
+  fresh, zero-context reviewer call** (new thread / new `codex` call / new subtask per
+  `../cross-model-review` and `shared-references/reviewer-adapter.md`): the reviewer
+  only sees the artifacts on disk plus the machine-readable round summary you paste
+  into the prompt (`REVIEWER_MEMORY.md` in hard/nightmare) — never the prior review
+  thread. Do NOT use `codex-reply` / `review_reply` for ordinary rounds. Rationale:
+  a reviewer that carries its own conversational thread across rounds anchors on its
+  earlier verdicts and on the executor's rebuttals — the same failure mode
+  `cross-model-review` forbids (“禁止在同一评审线程里续问”). Set `false` only
+  for objective Type-A checks (compile passes, tests green) where anchoring is harmless,
+  and note the override in `AUTO_REVIEW.md`. Exception: the Debate Protocol's ruling
+  step (Phase B.6) is an intra-round follow-up on the *same* round's review and may use
+  the reply tool within that round.
 - **HUMAN_CHECKPOINT = false** — When `true`, pause after each round's review (Phase B) and present the score + weaknesses to the user. Wait for user input before proceeding to Phase C. The user can: approve the suggested fixes, provide custom modification instructions, skip specific fixes, or stop the loop early. When `false` (default), the loop runs fully autonomously.
 - **COMPACT = false** — When `true`, (1) read `EXPERIMENT_LOG.md` and `findings.md` instead of parsing full logs on session recovery, (2) append key findings to `findings.md` after each round.
 - **REVIEWER_DIFFICULTY = medium** — Controls how adversarial the reviewer is. Three levels:
@@ -48,18 +61,20 @@ Autonomously iterate: review → implement fixes → re-review, until the extern
 When calling the reviewer, branch on REVIEWER_BACKEND:
 
 **If REVIEWER_BACKEND = `codex`:**
-  Use `mcp__codex__codex` for new review threads.
-  Use `mcp__codex__codex-reply` for follow-up rounds (reuse threadId).
+  Use `mcp__codex__codex` for review calls. With `REVIEWER_BIAS_GUARD = true`
+  (default), **every round is a new `mcp__codex__codex` call** — do not reuse
+  threadId across rounds. `mcp__codex__codex-reply` is only used (a) for the
+  intra-round Debate ruling step, or (b) across rounds when the guard is
+  explicitly set `false` for an objective Type-A loop.
 
 **If REVIEWER_BACKEND = `manual`:**
-  Use `mcp__manual_review__review` for new review threads with:
+  Use `mcp__manual_review__review` for review calls with:
     prompt: [exact same prompt that would go to Codex]
     config: {"model_reasoning_effort": "xhigh"}
-  Save the returned `threadId`.
-  Use `mcp__manual_review__review_reply` for follow-up rounds with:
-    threadId: [saved manual-review threadId]
-    prompt: [follow-up prompt]
-    config: {"model_reasoning_effort": "xhigh"}
+  Save the returned `threadId` (needed for the intra-round Debate ruling step).
+  With `REVIEWER_BIAS_GUARD = true` (default), each round starts a **new**
+  `mcp__manual_review__review` call; `mcp__manual_review__review_reply` follows the
+  same restrictions as `codex-reply` above.
 
 Prompt fidelity: the manual prompt must be exactly the same text that Codex would receive.
 Review tracing applies equally to both backends.
@@ -154,7 +169,11 @@ mcp__codex__codex:
 
 *For manual backend:* use `mcp__manual_review__review` with the `prompt` text above and `config: {"model_reasoning_effort": "xhigh"}`. Save the returned `threadId`.
 
-If this is round 2+, use `mcp__codex__codex-reply` (codex) or `mcp__manual_review__review_reply` (manual) with the saved threadId.
+If this is round 2+ and `REVIEWER_BIAS_GUARD = true` (default): make a **fresh**
+reviewer call using the “Prompt Template for Round 2+” below (no threadId reuse).
+Only if the guard is explicitly `false` (objective Type-A loop) use
+`mcp__codex__codex-reply` (codex) or `mcp__manual_review__review_reply` (manual)
+with the saved threadId.
 
 ##### Hard — MCP Review + Reviewer Memory
 
@@ -241,7 +260,9 @@ Then extract structured fields:
 - **Verdict** ("ready" / "almost" / "not ready")
 - **Action items** (ranked list of fixes)
 
-**STOP CONDITION**: If score >= 6 AND verdict ∈ {"ready", "almost"} (exact match — "not ready" does NOT qualify) → stop loop, document final state.
+**STOP CONDITION**: If score >= 6 AND verdict ∈ {"ready", "almost"} (exact match — "not ready" does NOT qualify) → stop loop, document final state. A positive
+assessment stops the *loop*; it is **not** a submission decision — see the mandatory
+decision card in Termination.
 
 #### Phase B.5: Reviewer Memory Update (hard + nightmare only)
 
@@ -389,7 +410,9 @@ Wait for the user's response. Parse their input:
 
 #### Feishu Notification (if configured)
 
-After parsing the score, check if `~/.claude/feishu.json` exists and mode is not `"off"`:
+After parsing the score, check the optional notification config (platform-dependent;
+e.g. Feishu via `~/.claude/feishu.json` on Claude Code — on other platforms, skip
+unless an equivalent notification channel is configured). If present and mode is not `"off"`:
 - Send a `review_scored` notification: "Round N: X/10 — [verdict]" with top 3 weaknesses
 - If **interactive** mode and verdict is "almost": send as checkpoint, wait for user reply on whether to continue or stop
 - If config absent or mode off: skip entirely (no-op)
@@ -487,6 +510,13 @@ When loop ends (positive assessment or max rounds):
    - List remaining blockers
    - Estimate effort needed for each
    - Suggest whether to continue manually or pivot
+6.5. **Mandatory human decision card** — regardless of how the loop ended, write a
+   decision card (inside the pipeline: `research_run/<slug>/decision_cards/`; standalone:
+   `review-stage/DECISION_CARD.md`) containing the score progression, remaining
+   weaknesses, and options (submit / another loop / manual fixes / pivot), then **stop
+   and wait for human sign-off**. A positive reviewer verdict is a loop stop condition,
+   NOT submission readiness — submission is always a human decision (pipeline decision
+   card #4).
 7. **Feishu notification** (if configured): Send `pipeline_done` with final score progression table
 8. **Render HTML view** (if `RENDER_HTML = true`, default): invoke `/render-html` on the cumulative review log:
    ```
@@ -499,7 +529,7 @@ When loop ends (positive assessment or max rounds):
 - **Large file handling**: If the Write tool fails due to file size, immediately retry using Bash (`cat << 'EOF' > file`) to write in chunks. Do NOT ask the user for permission — just do it silently.
 
 - ALWAYS use `config: {"model_reasoning_effort": "xhigh"}` for maximum reasoning depth
-- Save threadId from first call; use the appropriate reply tool (`mcp__codex__codex-reply` or `mcp__manual_review__review_reply`) for subsequent rounds per the Reviewer Calling Convention
+- With `REVIEWER_BIAS_GUARD = true` (default), every round is a fresh reviewer call; reply tools are limited to the intra-round Debate ruling step (or Type-A loops with the guard explicitly off) per the Reviewer Calling Convention
 - **Anti-hallucination citations**: When adding references during fixes, NEVER fabricate BibTeX. Use the same DBLP → CrossRef → `[VERIFY]` chain as `/paper-write`: (1) `curl -s "https://dblp.org/search/publ/api?q=TITLE&format=json"` → get key → `curl -s "https://dblp.org/rec/{key}.bib"`, (2) if not found, `curl -sLH "Accept: application/x-bibtex" "https://doi.org/{doi}"`, (3) if both fail, mark with `% [VERIFY]`. Do NOT generate BibTeX from memory.
 - Be honest — include negative results and failed experiments
 - Do NOT hide weaknesses to game a positive score
@@ -511,7 +541,29 @@ When loop ends (positive assessment or max rounds):
 
 ## Prompt Template for Round 2+
 
-Use the selected backend. *For codex:* `mcp__codex__codex-reply` with the saved threadId. *For manual:* `mcp__manual_review__review_reply` with the saved threadId.
+With `REVIEWER_BIAS_GUARD = true` (default), round 2+ is a **fresh call** on the
+selected backend (`mcp__codex__codex` / `mcp__manual_review__review` — new thread,
+zero prior-review context; do NOT paste the previous rounds' verdicts or scores as
+evidence):
+
+```
+mcp__codex__codex:
+  model: gpt-5.6-sol
+  config: {"model_reasoning_effort": "xhigh"}
+  prompt: |
+    [Round N/MAX_ROUNDS of autonomous review loop — you have no memory of
+    prior rounds; judge only from the artifacts]
+
+    Review the work directly from its artifacts:
+    - Claims / paper draft: <path>
+    - Methods / code under review: <path(s)>
+    - Raw results (verbatim files, not a summary): <path(s)>
+    - Changed this round: <changed-file paths> — read the diff, not my description
+
+    [same adversarial reviewer instructions and output format as Round 1]
+```
+
+Only when the guard is explicitly `false` (objective Type-A loop), reuse the thread:
 
 ```
 [For codex:] mcp__codex__codex-reply:

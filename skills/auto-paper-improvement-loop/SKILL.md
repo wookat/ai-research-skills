@@ -606,7 +606,7 @@ Report to user:
 
 ### Feishu Notification (if configured)
 
-After each round's review AND at final completion, check `~/.claude/feishu.json`:
+After each round's review AND at final completion, check the optional notification config (platform-dependent; e.g. Feishu via `~/.claude/feishu.json` on Claude Code — on other platforms skip unless an equivalent channel is configured):
 - **After each round**: Send `review_scored` — "Round N: X/10 — [key changes]"
 - **After final round**: Send `pipeline_done` — score progression table + final page count
 - If config absent or mode `"off"`: skip entirely (no-op)

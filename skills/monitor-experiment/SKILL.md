@@ -129,7 +129,7 @@ Present results in a comparison table:
 
 ### Step 6: Feishu Notification (if configured)
 
-After results are collected, check `~/.claude/feishu.json`:
+After results are collected, check the optional notification config (platform-dependent; e.g. Feishu via `~/.claude/feishu.json` on Claude Code — on other platforms skip unless an equivalent channel is configured):
 - Send `experiment_done` notification: results summary table, delta vs baseline
 - If config absent or mode `"off"`: skip entirely (no-op)
 

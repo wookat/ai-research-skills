@@ -1,5 +1,12 @@
 # Integration Contract
 
+> **本整合包适用范围：**本文源自上游 ARIS 仓库，保留了其历史背景（issue 编号、
+> 事故记录）供溯源。对本包而言，真正的操作性内容是 **§2 的 helper 解析链**与
+> **失败策略（Policy A/B/C）**。本包不附带 `install_aris*.sh` / `smart_update*.sh`；
+> 文中提到的 `~/.aris/repo` 全局指针由本包根目录的 `bash install.sh` 写入（或手工
+> `export ARIS_REPO=<包根>`）。本包实际收录的 helper 见 `tools/` 目录；未收录的
+> helper（如 `research_wiki.py`、`save_trace.sh`）按各 skill 声明的降级路径处理。
+
 When one ARIS skill delegates work to another (or to persistent project
 state), the coupling must be **engineered**, not assumed. This document
 formalizes what every cross-skill integration inside ARIS must provide.

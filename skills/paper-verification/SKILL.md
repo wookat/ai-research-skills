@@ -11,6 +11,13 @@ description: >
 
 # Paper Verification Methodology
 
+⚠ 本 skill 属 verdict 类评审，必须遵守
+`../cross-model-review` 协议：在零上下文新线程（fresh thread）、优先跨模型的条件下
+执行核验，只读被核验的论文/代码/结果文件本身，禁止在刚写完或刚修改论文的同一
+上下文里核验自己的数字。无法换线程/换模型时，按 `shared-references/reviewer-adapter.md`
+降级并在报告头部标注 `⚠ same-context review, findings may be incomplete`。
+同时遵守 `shared-references/research-integrity.md` 红线。
+
 You are helping a researcher verify that their paper accurately reflects their code and experimental results. This is the most critical quality control step in academic writing.
 
 ## Verification Dimensions
@@ -120,3 +127,7 @@ Produce a structured verification report:
 4. **Code-paper mismatches**: description vs implementation gaps
 5. **Citation issues**: metadata errors and unverified claims
 6. **Suggested fixes**: specific text replacements for each issue
+
+**本整合包契约：**核验报告写入
+`research_run/<课题slug>/stage6_review/verification_report.md`；脱离
+`research-pipeline` 单独调用时，退当前工作目录。
