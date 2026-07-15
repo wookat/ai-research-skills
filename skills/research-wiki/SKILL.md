@@ -101,16 +101,23 @@ WIKI_SCRIPT=".aris/tools/research_wiki.py"
 [ -f "$WIKI_SCRIPT" ] || {
   echo "ERROR: research_wiki.py not found at .aris/tools/, tools/, \$ARIS_REPO/tools/, or via ~/.aris/repo." >&2
   echo "       Fix one of:" >&2
-  echo "         1. rerun 'bash tools/install_aris.sh' from the ARIS repo (creates .aris/tools symlink, refreshes ~/.aris/repo)" >&2
-  echo "         2. rerun 'bash tools/smart_update.sh' (refreshes ~/.aris/repo)" >&2
-  echo "         3. export ARIS_REPO=<path-to-ARIS-repo>" >&2
-  echo "         4. cp <ARIS-repo>/tools/research_wiki.py tools/" >&2
+  echo "         1. run 'bash install.sh' at the pack root (writes ~/.aris/repo)" >&2
+  echo "         2. export ARIS_REPO=<path-to-pack-root>" >&2
+  echo "         3. cp <pack-root>/tools/research_wiki.py tools/  (if the helper is present)" >&2
   exit 1
 }
 ```
 
-`/research-wiki` itself is the wiki tool — if the helper is missing the
-skill **hard-fails**. Caller skills that update the wiki as a side
+> **本整合包适配：**本包 `tools/` 目前**未收录** `research_wiki.py`（上游 ARIS
+> 专有 helper）。解析链未命中时不要因此整个 skill 报废：降级为**直接按本文件
+> 前述目录结构手工读写 `research-wiki/` 下的 markdown 与 `graph/edges.jsonl`**，
+> 并在 wiki 根目录的 `README.md`（或首次创建时新建）记录一行
+> `helper-degraded: manual maintenance`。若用户自备了上游 `research_wiki.py`，
+> 解析链（含 `bash install.sh` 写入的 `~/.aris/repo`）会正常命中并恢复脚本化路径。
+
+`/research-wiki` itself is the wiki tool — if the helper is missing it
+hard-fails the *scripted* path and falls back to the manual-maintenance
+degradation above (never silently pretend the helper ran). Caller skills that update the wiki as a side
 effect (`/idea-creator`, `/result-to-claim`, `/research-lit`, `/arxiv`,
 `/alphaxiv`, `/deepxiv`, `/semantic-scholar`, `/exa-search`) use the
 same chain but **warn-and-skip** instead of hard-failing — their

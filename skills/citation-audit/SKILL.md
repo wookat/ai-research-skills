@@ -8,6 +8,12 @@ description: Zero-context verification that every cited bibliography entry is re
 幻觉引用和张冠李戴的引用是 AI 辅助写作最危险的输出——审稿人抽查到一条就足以
 摧毁全文可信度。投稿前和学位论文送审前**必跑**。
 
+⚠ 本 skill 属 verdict 类评审，必须遵守 `../cross-model-review` 协议：在零上下文
+新线程、优先跨模型的条件下逐条核验，只读 `.bib`/`.tex` 本身，禁止在生成这些
+引用的同一上下文里自查。无法换线程/换模型时，按 `shared-references/reviewer-adapter.md`
+降级，并在报告头部标注 `⚠ same-context audit, hallucinated citations may be missed`。
+同时遵守 `shared-references/research-integrity.md` 红线。
+
 ## 流程
 
 1. **提取**：解析 `.bib` 与全部 `.tex`，得到每个 cite key 的（元数据，引用处上下文句子）
@@ -25,6 +31,10 @@ description: Zero-context verification that every cited bibliography entry is re
    - `REMOVE`：条目是幻觉或无法支持，删除并改写引用句
 4. **报告**：`citation_audit.md` —— 汇总计数表 + 逐条 verdict（含证据链接）+
    待执行的 bib/tex 修改清单。修改执行后只复核被改动的条目。
+
+**本整合包契约：**报告写入
+`research_run/<课题slug>/stage6_review/citation_audit.md`；脱离
+`research-pipeline` 单独调用时，退当前工作目录。
 
 ## 纪律
 

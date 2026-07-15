@@ -642,7 +642,7 @@ What would you like to do next?
 - **Preliminary data de-risks.** Include any pilot results, existing datasets, or prior publications that demonstrate feasibility.
 - **Reviewer-facing structure.** Bold key sentences. Use numbered lists for clarity. Make the reviewer's job easy.
 - **Cultural norms matter.** KAKENHI expects 社会的意義; NSF expects Broader Impacts; NSFC expects 国际前沿 positioning. Missing these is a red flag for reviewers.
-- **Feishu notifications are optional.** If `~/.claude/feishu.json` exists, send `checkpoint` at each phase transition and `pipeline_done` at final output. If absent, skip silently.
+- **Notifications are optional and platform-dependent.** If a notification channel is configured (e.g. Feishu via `~/.claude/feishu.json` on Claude Code), send `checkpoint` at each phase transition and `pipeline_done` at final output. If absent, skip silently.
 
 ## Parameter Pass-Through
 

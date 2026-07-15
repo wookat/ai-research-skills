@@ -48,7 +48,14 @@ description: Hypothesis-driven experiment loop with fair-comparison discipline -
   的调参努力必须不少于给自己方法的。
 - **禁止指标漂移**：结果不好不得悄悄换指标/换数据集/换切分讲故事。评测协议在
   阶段 A 冻结，变更需记录理由并全量重跑。
-- **显著性**：主结果报 ≥3 种子的均值±方差；提升幅度小于种子间方差的结论不成立。
+- **显著性**：主结果报 ≥3 种子的均值±标准差（std）；提升幅度小于种子间标准差的结论不成立。
+  统计检验方法选择交给同包 `statistical-testing`，并遵守：
+  - **n=3 种子不要报 p 值**（检验功效不足，p 值无意义）；报均值±std 或极差即可。
+  - **≥5 种子**且需要显著性结论时，用配对检验（同种子同数据集配对；小样本首选
+    Wilcoxon signed-rank，分布近似正态可用 paired t-test）。
+  - **多重比较**：数据集 × 预测长度 × baseline × 指标同时做几十次比较时，未经
+    校正（Holm / Benjamini-Hochberg FDR）的“显著”会大量假阳性；要么校正，
+    要么只对预先指定的主对比做检验、其余只报描述统计。
 - 连续两轮假设证伪且归因指向核心机制本身 → 停止，出决策卡（继续 pivot 还是回选题）。
 
 ## 阶段 D — 论文级证据构建
@@ -58,7 +65,9 @@ description: Hypothesis-driven experiment loop with fair-comparison discipline -
 1. **主表**：全部标准数据集 × 全部 baseline（含最新 SOTA 与最强简单基线）
 2. **消融**：每个创新组件单独去除；证明"最小性"（去核心组件应显著掉点）
 3. **敏感性**：关键超参扫描，证明不是精调出来的脆弱点
-4. **效率表**：参数量/训练成本/推理延迟 vs baseline
+4. **效率表**：参数量/训练成本/推理延迟 vs baseline——所有方法在**同一硬件
+   （同 GPU 型号/驱动）、同精度（fp32/fp16/bf16 一致）、同 batch size 口径**下
+   测量，表注明测量环境；不同硬件上的延迟数字不可直接入表
 5. **失败案例分析**：主动展示方法在哪些条件下不 work（审稿人视角的诚实加分项）
 6. **可复现包**：一条命令跑通主表的脚本 + 固定种子 + 环境锁定
 
@@ -72,7 +81,20 @@ description: Hypothesis-driven experiment loop with fair-comparison discipline -
 
 **本整合包契约：**产物写
 `research_run/<课题slug>/stage4_experiments/`（`hypothesis_tree.md`、`results/`、
-`ablations/`）；脱离 `research-pipeline` 单独调用时，退当前工作目录。
+`ablations/`、`evidence_summary.md`）；脱离 `research-pipeline` 单独调用时，退当前工作目录。
+
+**ARIS 系子 skill 的坐标映射**（`run-experiment` / `experiment-queue` /
+`ablation-planner` / `monitor-experiment` 等原件里的 ARIS 项目布局 → 本包流水线）：
+
+| ARIS 原件坐标 | 本包流水线位置 |
+|---|---|
+| `EXPERIMENT_LOG.md` / `EXPERIMENT_TRACKER.md` | `stage4_experiments/results/EXPERIMENT_LOG.md`（逐实验追加） |
+| `idea-stage/docs/research_contract.md`（及 legacy `docs/research_contract.md`） | `stage1_ideas/idea_cards.md` + `stage3_critique/critique_card.md`（方法描述与约束从这两处读） |
+| 项目 `CLAUDE.md`（算力/服务器配置上下文） | 项目级 agent 指令文件（CLAUDE.md / AGENTS.md / .cursorrules，随平台），不是流水线产物 |
+| `review-stage/AUTO_REVIEW.md` | `stage6_review/`（或单独调用时的 `review-stage/`） |
+
+这些子 skill 写它们自己的默认路径时，编排者（本 skill / research-pipeline）
+负责把产物同步/搬运到上表规范位置。
 
 ## 纪律
 

@@ -60,14 +60,14 @@ _REQUIRED = [
         "poster.pdf",
         50_000,
         "Step 10 (render_poster.py)",
-        "Run Step 10:  python ~/.claude/skills/paper2poster/scripts/"
+        "Run Step 10:  python <skills-dir>/paper2poster/scripts/"
         "render_poster.py <outdir>/poster.html",
     ),
     (
         "poster.png",
         20_000,
         "Step 10 (render_poster.py — produced alongside the PDF)",
-        "Run Step 10:  python ~/.claude/skills/paper2poster/scripts/"
+        "Run Step 10:  python <skills-dir>/paper2poster/scripts/"
         "render_poster.py <outdir>/poster.html",
     ),
 ]
