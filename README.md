@@ -3,7 +3,8 @@
 面向"人做决策、AI 做执行"的科研工作流，从选题到 CCF-A 论文再到学位论文。
 **通用实证研究方法为核心，领域模块可插拔**——凡是走"文献→创新点→基线复现→消融→
 顶会投稿"这套研究方法的方向都适用，尤其适合时序预测（time-series forecasting）
-这类实证 ML 方向（已内置该领域模块，见 `domains/`）。
+这类实证 ML 方向（已内置该领域模块，含 2021-2026 共 3447 篇时序预测论文的
+路线/拥挤度统计证据库，见 `domains/`）。
 
 **整合而非重写**：直接收录各开源项目中最强的 skill 原件（含脚本、参考文件、
 证据基础），统一命名与触发规则、消除冲突，用自研的编排层（research-pipeline +
@@ -49,7 +50,8 @@ Claude Code / Codex / Devin（含网页版）/ Cursor 通用。
       Codex MCP → codex/gemini CLI → 子智能体/子会话（Claude Code/Cursor/Codex/Devin 四平台均可，零上下文）→ 新对话人工中转 → 同模型降级并标注，
       四平台（Claude Code / Codex / Devin / Cursor）均可用，接不接 MCP 都能跑
 写作/展示增强：result-to-claim（实验结果→论文主张）/ paper-claim-audit（逐主张证据核验）
-      / research-review（深度技术评审）/ paper-illustration + figure-description（插图）
+      / research-review（深度技术评审）/ paper-illustration + figure-description（插图，
+      出图后端可插拔：Gemini / OpenAI gpt-image / 任意 OpenAI 兼容端点 / mermaid 矢量降级）
       / slides-polish（幻灯打磨）/ embodiment-description（专利实施例）
       / paper-compile + overleaf-sync（LaTeX 编译/Overleaf 同步）/ research-wiki（长期研究记忆）
 
@@ -69,7 +71,11 @@ ARIS 原件中引用未收录 skill 的地方，按 `skills/shared-references/pa
 - **Devin（含网页版）**：拷贝到仓库 `.agents/skills/`
 - **Cursor**：拷贝到项目内，在 `.cursor/rules/`（或 `AGENTS.md`）中引用各 SKILL.md 路径
 
-`tools/` 目录（experiment-queue 等的脚本）与 `skills/` 平级拷贝。评审器后端适配见
+`tools/` 目录与 `skills/` 平级拷贝，收录全部 canonical helper：`research_wiki.py`
+（研究 wiki 知识库）、`run_state.py`（阶段状态机）、`verify_paper_audits.sh`
+（投稿前三审计校验 gate）、`verify_wiki_coverage.sh`（wiki 覆盖诊断）、
+`save_trace.sh`（评审留痕）、`capture_filter.py`（防自毒筛查）、`experiment_queue/`
+（GPU 排队）等。评审器后端适配见
 `skills/shared-references/reviewer-adapter.md`：有 MCP 走 MCP，没有则自动降到
 CLI / 子会话 / 新对话人工中转，四平台都能用。
 
@@ -109,3 +115,9 @@ skill 被全局安装（如 `~/.claude/skills/`）、从任意项目目录调用
 `research_run/<课题slug>/decision_cards/`），包含：阶段结论、证据摘要、
 可选项（含各自风险）、agent 推荐项、等待人类批示的明确问题。
 **人未批示前不得跨阶段推进。** 这是"人做监督者"模式的硬约束。
+
+## License 与来源
+
+MIT License。本包整合自 microsoft/ResearchStudio、wanshuiyin/ARIS、fcakyon/phd-skills、
+Master-cai/Research-Paper-Writing-Skills、xjtulyc/awesome-rosetta-skills 等开源项目
+（均为 MIT），逐文件来源与修改范围见 [ATTRIBUTION.md](ATTRIBUTION.md)。
