@@ -1,9 +1,9 @@
 # Wiki helper resolution chain
 
 > **本整合包适配：**本包不附带 `install_aris*.sh` / `smart_update*.sh`；`~/.aris/repo`
-> 全局指针由包根目录的 `bash install.sh` 写入。且本包 `tools/` 未收录
-> `research_wiki.py` —— 解析链未命中时按 `skills/research-wiki/SKILL.md` 的
-> 手工维护降级处理，不要卡死流程。
+> 全局指针由包根目录的 `bash install.sh` 写入。本包 `tools/research_wiki.py` 已收录
+>（按 `skills/research-wiki/SKILL.md` 文档接口的 clean-room 实现），安装后解析链
+> 即可命中；仅当解析链仍未命中时才按该 SKILL 的手工维护降级处理，不要卡死流程。
 
 Canonical resolution chain for the research-wiki helper. Used by every
 SKILL that touches the wiki — never hard-code `python3 tools/research_wiki.py`,
