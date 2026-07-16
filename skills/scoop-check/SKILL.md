@@ -99,6 +99,18 @@ A paper is a **high-potential candidate** if **any** of the following hold:
 - The paper is from the same narrow subfield and published within the last 24 months, even with a lower overlap score, since recent close-neighborhood work is the most likely to have anticipated the contribution.
 - The abstract is ambiguous about the method in a way that could either confirm or rule out overlap — i.e., the paper cannot be safely dismissed from the abstract alone.
 
+**Boundary-paper auto-promotion (本整合包硬规则)** — any paper that the proposed
+idea explicitly positions itself against (named in the idea card's delta / "与 X 的
+界线" statement, or used in earlier pipeline stages as the boundary that defines this
+novelty) is **automatically a high-potential candidate**, regardless of its triage
+score, and is **exempt from the cap below**. Abstract-level or memory-level beliefs
+about such a paper formed in earlier stages (lit review, idea generation) do **not**
+count as verification — they are precisely where mis-scoped mechanism claims hide
+(trial-run lesson: a boundary paper believed to be "inference-time routing only"
+turned out, on full-text reading, to contain the exact training-time mechanism the
+idea claimed as novel, invalidating a full idea-card + review round). Every
+boundary paper goes through Step 5 full-text verification before any verdict.
+
 Cap the candidate set at the top **3–7 papers** *after* triage — the cap applies to the post-filter selection, not the Step 3 input set, so a large search + recall pool is fine as long as you narrow it here. If more than 7 papers qualify, keep the 7 with the highest overlap score (breaking ties in favor of mechanism matches and recency). If fewer than 3 papers meet the criteria, lower the threshold and include the next-most-similar papers so that the deep-dive in Step 5 still has meaningful coverage. List the candidates explicitly with the reason each was selected.
 
 **Crowded-route exception (本整合包补充)** — if the idea sits on a route flagged as
@@ -217,7 +229,7 @@ Note: the *kind* of delta (new territory vs. measurable improvement vs. sideways
 
 ## Report
 
-Render the final report inline in the conversation as a single, self-contained markdown document. Include **all** of the following sections in this exact order, with no omissions or summarization:
+Write the complete report to the persisted file (see Important Notes); it must include **all** of the following sections in this exact order, with no omissions or summarization:
 
 1. **Verdict** — exactly one of the five levels from Step 7, stated with its level number and label: **Level 5 — No Overlap (most novel)**, **Level 4 — Low Overlap**, **Level 3 — Medium Overlap**, **Level 2 — High Overlap**, or **Level 1 — Full Overlap (least novel)**.
 2. **Delta** — the one-sentence delta statement from Step 7. If no crisp delta could be written, say so and identify which prior work blocks it.
@@ -230,4 +242,4 @@ Render the final report inline in the conversation as a single, self-contained m
 - **Negative results are valuable.** A thorough search that returns nothing is itself evidence of novelty — document the queries used.
 - **Persist the report（本整合包契约）.** In addition to displaying it, write the complete final report to `research_run/<课题slug>/stage2_scoop/scoop_report_<idea-slug>.md`（同一课题查多个 idea 时用 idea slug 区分文件名，避免互相覆盖；单 idea 亦可写 `scoop_report.md`。若不在 research-pipeline 流水线中，写到当前工作目录）。Downstream stages read the file, not the chat.
 - **Log every step.** After completing each step, write a markdown file to `research_run/<课题slug>/stage2_scoop/step{step_number}.md` (when running inside the `research-pipeline`; standalone, fall back to `./step{step_number}.md` in the current working directory) containing the step number, step name, timestamp, and the full structured result of that step. This produces one file per step, enabling downstream tooling to inspect intermediate results.
-- **Display the full report.** Provide the complete detailed report — including all search results, analysis, and reasoning — not just a summary.
+- **Inline output is a summary, the file is the artifact (token discipline).** In the conversation, show only: the Verdict (with level), the Delta sentence, the per-candidate level table for the Step-5 deep-dive candidates, and the path to the persisted report file. Do **not** paste the full structured-papers list or the complete comparison into the chat — downstream stages and humans read the file. When no file can be persisted (no writable directory), fall back to displaying the full report inline.

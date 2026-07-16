@@ -77,7 +77,10 @@ def _headers() -> dict[str, str]:
         "User-Agent": _USER_AGENT,
         "Accept": "application/json",
     }
-    api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY", "").strip()
+    # Both spellings are accepted: the paper-search connector historically read
+    # SEMANTICSCHOLAR_API_KEY while this tool read SEMANTIC_SCHOLAR_API_KEY.
+    api_key = (os.getenv("SEMANTIC_SCHOLAR_API_KEY", "").strip()
+               or os.getenv("SEMANTICSCHOLAR_API_KEY", "").strip())
     if api_key:
         headers["x-api-key"] = api_key
     return headers

@@ -252,3 +252,9 @@ Each is a CLI taking a stdin prompt (`<<SYSTEM>>...<<USER>>...`) and emitting JS
 把最终 idea 卡片复制/汇总到 `research_run/<课题slug>/stage1_ideas/` 下，并写入或追加
 `research_run/<课题slug>/stage1_ideas/idea_cards.md` 索引；该阶段只产 1 张高质量卡。
 脱离 `research-pipeline` 单独调用时，退当前工作目录。
+
+**命名界线核验（本整合包硬规则）**：最终卡片里凡是以"unlike X / 与 X 的界线"式
+定位命名了具体先行工作 X 的，X 的机制描述不得凭文献阶段的摘要级印象——交卡前
+当场核对 X 的全文或详细摘要确认界线成立，否则在卡上把该界线标注为 `未核验`。
+scoop-check 阶段会把所有命名界线论文自动升为全文深读候选；在这里先核一次，
+可避免"界线论文机制被误记 → 通过评审后才撞车 → 整轮返工"（试跑中真实发生过）。

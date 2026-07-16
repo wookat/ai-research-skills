@@ -68,6 +68,23 @@ python "$SEARCH" \
     --sources arxiv semantic_scholar openreview
 ```
 
+**Pipeline / programmatic mode (token discipline):** when this skill is invoked by
+another skill (scoop-check, literature-gap-mining, idea-mining quick-scoop, arxiv-radar)
+rather than directly by the user, always add `--out <file>.jsonl`. The CLI then writes
+full results to the file and prints only per-source counts plus the SOURCE HEALTH
+block — downstream steps read/grep the JSONL file instead of pasting hundreds of
+records through the conversation:
+
+```bash
+python "$SEARCH" \
+    --query "<QUERY>" \
+    --start-year 2024 --end-year 2026 \
+    --max-papers 20 \
+    --out results_q1.jsonl
+```
+
+The user-facing full-table display rules below apply to **direct user requests only**.
+
 To disable parallel execution (rarely needed):
 
 ```bash
@@ -196,6 +213,25 @@ following sections, in this exact order:
 If a source fails, `search_papers` catches the exception, prints the error, and
 continues with the remaining sources. Never retry blindly; report errors to the
 user.
+
+### SOURCE HEALTH block (read it every run)
+
+The CLI ends every run with a `SOURCE HEALTH:` block distinguishing three states
+per source: `ok (N results)`, `ok (0 hits for this query)`, and `ERROR: <message>`.
+A source in ERROR state is **dead, not empty** — treat its coverage as missing
+(scoop-check downgrades verdicts to provisional when a required source is dead).
+Never interpret an ERROR source as "no matching papers exist".
+
+### Credentials / environment variables (optional but recommended)
+
+| Variable | Effect |
+|:---|:---|
+| `OPENREVIEW_USER` / `OPENREVIEW_PASS` | Authenticate to OpenReview — required since OpenReview began blocking anonymous API access with an anti-bot challenge; a free openreview.net account suffices |
+| `OPENALEX_MAILTO` | Joins the OpenAlex polite pool (faster, more reliable) |
+| `OPENALEX_API_KEY` | Enables OpenAlex premium semantic search; plain keyword search is used without it |
+| `SEMANTICSCHOLAR_API_KEY` | Raises Semantic Scholar rate limits |
+
+Put them in a `.env` at the pack root (auto-loaded by `_env.py`) or export in the shell.
 
 ## Model knowledge source
 
