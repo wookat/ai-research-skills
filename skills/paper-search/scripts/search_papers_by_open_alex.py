@@ -26,23 +26,35 @@ def search_papers_by_open_alex(
         List of paper dictionaries.
     """
     API_KEY = os.environ.get("OPENALEX_API_KEY", "")
+    MAILTO = os.environ.get("OPENALEX_MAILTO", "")
     url = "https://api.openalex.org/works"
     papers: list[dict] = []
     page = 1
     per_page = min(200, max_results)  # API max per request is 200
 
+    # `search.semantic` is a premium feature: without an API key it 504s/errors,
+    # which used to zero out this source silently. Use plain keyword `search`
+    # unless a key is present.
+    search_param = "search.semantic" if API_KEY else "search"
+
     while len(papers) < max_results:
         params = {
-            "search.semantic": query,
+            search_param: query,
             "filter": f"publication_year:{start_year}-{end_year}",
             "sort": "relevance_score:desc",
             "page": page,
             "per-page": per_page,
-            #"mailto": "your_email@example.com",  # OpenAlex polite pool
         }
+        if MAILTO:
+            params["mailto"] = MAILTO  # OpenAlex polite pool
         headers = {"Authorization": f"Bearer {API_KEY}"} if API_KEY else {}
 
-        response = requests.get(url, params=params, headers=headers)
+        response = requests.get(url, params=params, headers=headers, timeout=30)
+
+        # Premium search endpoint failing with a key set: retry once with plain search.
+        if search_param == "search.semantic" and response.status_code in (400, 403, 504):
+            search_param = "search"
+            continue
 
         if response.status_code == 429:
             print("Rate limited. Waiting 3 seconds...")

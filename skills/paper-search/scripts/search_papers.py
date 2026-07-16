@@ -8,6 +8,7 @@ Semantic Scholar, Crossref.
 import argparse
 import concurrent.futures
 import importlib
+import json
 from datetime import date, datetime
 from typing import Optional
 
@@ -115,6 +116,31 @@ def search_papers(
         Each paper dict contains: title, authors, year, abstract, url,
         venue, citation_count, publication_date, source.
     """
+    results, _ = search_papers_with_status(
+        query=query, start_year=start_year, end_year=end_year,
+        max_results=max_results, sources=sources, parallel=parallel,
+        start_date=start_date, end_date=end_date,
+    )
+    return results
+
+
+def search_papers_with_status(
+    query: str,
+    start_year: int,
+    end_year: int,
+    max_results: int = 10,
+    sources: Optional[list[str]] = None,
+    parallel: bool = True,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+) -> tuple[dict[str, list[dict]], dict[str, str]]:
+    """Like search_papers, but also returns per-source status.
+
+    Second return value maps source name -> status string: "ok" when the source
+    executed without error (even with 0 hits), or "ERROR: <message>" when it
+    failed. Callers (scoop-check, self_check) use this to distinguish a genuine
+    zero-hit result from a dead source — the two must never look the same.
+    """
     sources = sources or ALL_SOURCES
     invalid = set(sources) - set(ALL_SOURCES)
     if invalid:
@@ -126,36 +152,39 @@ def search_papers(
         raise ValueError(f"start_date {start_d} is after end_date {end_d}")
 
     results: dict[str, list[dict]] = {}
+    status: dict[str, str] = {}
 
-    def _search(source: str) -> tuple[str, list[dict]]:
+    def _search(source: str) -> tuple[str, list[dict], str]:
         try:
             func = _load_source_func(source)
         except Exception as e:
             # Missing optional dependency for this source — skip it, keep the others working.
             print(f"[{source}] unavailable (import failed: {e}); skipping this source.")
-            return source, []
+            return source, [], f"ERROR: import failed: {e}"
         try:
             papers = func(query, start_year, end_year, max_results)
         except Exception as e:
             print(f"[{source}] Error: {e}")
-            papers = []
-        return source, papers
+            return source, [], f"ERROR: {e}"
+        return source, papers, "ok"
 
     if parallel:
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
             futures = {executor.submit(_search, s): s for s in sources}
             for future in concurrent.futures.as_completed(futures):
-                source, papers = future.result()
+                source, papers, st = future.result()
                 results[source] = papers
+                status[source] = st
     else:
         for source in sources:
-            _, papers = _search(source)
+            _, papers, st = _search(source)
             results[source] = papers
+            status[source] = st
 
     if start_d or end_d:
         results = {s: _filter_by_date_range(ps, start_d, end_d) for s, ps in results.items()}
 
-    return results
+    return results, status
 
 
 if __name__ == "__main__":
@@ -186,9 +215,15 @@ if __name__ == "__main__":
         "--end-date", default=None,
         help="Optional YYYY-MM-DD inclusive upper bound; applied as a post-filter",
     )
+    parser.add_argument(
+        "--out", default=None, metavar="FILE",
+        help="Write full results as JSONL to FILE and print only per-source counts "
+             "and the SOURCE HEALTH block (keeps agent context small; downstream "
+             "steps read the file instead of the terminal output)",
+    )
     args = parser.parse_args()
 
-    results = search_papers(
+    results, status = search_papers_with_status(
         query=args.query,
         start_year=args.start_year,
         end_year=args.end_year,
@@ -200,19 +235,41 @@ if __name__ == "__main__":
     )
 
     total = 0
-    for source, papers in results.items():
-        print(f"\n{'='*60}")
-        print(f"  {source}: {len(papers)} papers found")
-        print(f"{'='*60}")
-        for i, p in enumerate(papers, 1):
-            print(f"  [{i}] {p['title']}")
-            print(f"      Authors: {', '.join(p['authors'][:3])}{'...' if len(p['authors']) > 3 else ''}")
-            print(f"      Year: {p['year']}  Citations: {p['citation_count']}  Venue: {p['venue']}")
-            print(f"      URL: {p['url']}")
-            print()
-        total += len(papers)
+    if args.out:
+        with open(args.out, "w", encoding="utf-8") as f:
+            for source, papers in results.items():
+                for p in papers:
+                    f.write(json.dumps(p, ensure_ascii=False) + "\n")
+        for source, papers in sorted(results.items()):
+            print(f"  {source}: {len(papers)} papers found")
+            total += len(papers)
+        print(f"\nWrote {total} papers to {args.out} (JSONL).")
+    else:
+        for source, papers in results.items():
+            print(f"\n{'='*60}")
+            print(f"  {source}: {len(papers)} papers found")
+            print(f"{'='*60}")
+            for i, p in enumerate(papers, 1):
+                print(f"  [{i}] {p['title']}")
+                print(f"      Authors: {', '.join(p['authors'][:3])}{'...' if len(p['authors']) > 3 else ''}")
+                print(f"      Year: {p['year']}  Citations: {p['citation_count']}  Venue: {p['venue']}")
+                print(f"      URL: {p['url']}")
+                print()
+            total += len(papers)
 
     print(f"\nTotal: {total} papers from {len(results)} sources.")
+
+    # Per-source health: a dead source must never be mistaken for "no matches".
+    print("\nSOURCE HEALTH:")
+    for source in sorted(results):
+        st = status.get(source, "ok")
+        n = len(results[source])
+        if st != "ok":
+            print(f"  {source}: {st}")
+        elif n == 0:
+            print(f"  {source}: ok (0 hits for this query)")
+        else:
+            print(f"  {source}: ok ({n} results)")
 
 # Example usage:
 # python search_papers.py --query "data efficacy for LM training" --start-year 2024 --end-year 2026 --max-papers 20

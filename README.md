@@ -97,9 +97,17 @@ pip install -r requirements.txt
 python3 tools/self_check.py --online   # 依赖 / 脚本语法 / 检索源存活
 ```
 
-`openreview-py` 是必需依赖：缺失时 paper-search 的 OpenReview 源会静默返回 0 结果，
-而它是查在审撞车论文的唯一渠道——scoop-check 已将其列为硬规则（源不可用 → 结论只能
-provisional）。
+`openreview-py` 是必需依赖，且 OpenReview 已对匿名 API 访问启用反爬 challenge——
+必须在 `.env` 或环境变量中配置 `OPENREVIEW_USER` / `OPENREVIEW_PASS`（免费账号即可），
+否则该源不可用。它是查在审撞车论文的唯一渠道——scoop-check 已将其列为硬规则
+（源不可用 → 结论只能 provisional）。检索源失败现在会在 `SOURCE HEALTH` 块中显式
+报 `ERROR`（含修复提示），不会再与"0 条命中"混淆。
+
+可选环境变量：`OPENALEX_MAILTO`（OpenAlex polite pool，推荐）、`OPENALEX_API_KEY`
+（OpenAlex 语义检索，缺省用普通关键词检索）、`SEMANTICSCHOLAR_API_KEY`（提升限额）。
+
+**Token 提示**：脚本化调用 `search_papers.py` 时加 `--out <file>.jsonl`，完整结果落盘、
+终端只输出计数与 SOURCE HEALTH，避免把成百条检索记录灌进对话上下文。
 
 `domains/` 目录与 skills 平级放置；各 skill 会按需读取 `domains/<领域>.md`。
 

@@ -63,16 +63,46 @@ def check_tools() -> list[str]:
 
 
 _RESULT_LINE = re.compile(r"^\s*(?P<source>[a-z_]+): (?P<n>\d+) papers found\s*$")
+_HEALTH_LINE = re.compile(r"^\s*(?P<source>[a-z_]+): (?P<status>ok\b.*|ERROR:.*)$")
+
+# Actionable per-source fix hints, shown when a source is dead/erroring.
+FIX_HINTS = {
+    "openreview": "anti-bot challenge on anonymous access — set OPENREVIEW_USER / "
+                  "OPENREVIEW_PASS (free openreview.net account) in env or .env",
+    "open_alex": "plain keyword search needs no key; set OPENALEX_MAILTO for the "
+                 "polite pool, OPENALEX_API_KEY only for semantic search",
+    "dblp": "dblp.org is sometimes unreachable from cloud/CI networks (TLS reset) — "
+            "verify with `curl -sS https://dblp.org/search/publ/api?q=test&format=json`",
+    "semantic_scholar": "rate-limited without a key — set SEMANTICSCHOLAR_API_KEY "
+                        "or retry after a pause",
+    "arxiv": "usually rate limiting (HTTP 429) — respect the 4s inter-request throttle",
+    "crossref": "usually transient — retry; set a mailto in the query for the polite pool",
+}
 
 
 def check_online() -> list[str]:
-    """One live query through search_papers.py; report per-source result counts."""
+    """One live query through search_papers.py; report per-source health.
+
+    Distinguishes three states per source: ok-with-results, ok-but-zero-hits
+    (suspicious for a broad query), and ERROR (the source raised). Dead sources
+    get an actionable fix hint instead of a bare DEAD flag.
+    """
     proc = subprocess.run(
         [sys.executable, str(SEARCH_SCRIPT), "--query", "transformer time series",
          "--start-year", "2023", "--end-year", "2026", "--max-papers", "2"],
         capture_output=True, text=True, timeout=300)
     counts: dict[str, int] = {}
+    health: dict[str, str] = {}
+    in_health = False
     for line in proc.stdout.splitlines():
+        if line.strip() == "SOURCE HEALTH:":
+            in_health = True
+            continue
+        if in_health:
+            m = _HEALTH_LINE.match(line)
+            if m:
+                health[m.group("source")] = m.group("status")
+            continue
         m = _RESULT_LINE.match(line)
         if m:
             counts[m.group("source")] = int(m.group("n"))
@@ -82,8 +112,16 @@ def check_online() -> list[str]:
         return ["search_papers.py"]
     dead = []
     for source, n in sorted(counts.items()):
-        print(f"  {'ok      ' if n else 'DEAD    '} {source}: {n} results")
-        if not n:
+        st = health.get(source, "")
+        if st.startswith("ERROR"):
+            print(f"  ERROR    {source}: {st[:120]}")
+            print(f"           fix: {FIX_HINTS.get(source, 'see error above')}")
+            dead.append(source)
+        elif n:
+            print(f"  ok       {source}: {n} results")
+        else:
+            print(f"  DEAD     {source}: 0 results for a broad query")
+            print(f"           fix: {FIX_HINTS.get(source, 'inspect the source script manually')}")
             dead.append(source)
     return dead
 

@@ -25,7 +25,8 @@ def search_papers_by_semantic_scholar(
     Returns:
         List of paper dictionaries.
     """
-    API_KEY = os.environ.get("SEMANTICSCHOLAR_API_KEY", "")
+    API_KEY = (os.environ.get("SEMANTICSCHOLAR_API_KEY", "")
+               or os.environ.get("SEMANTIC_SCHOLAR_API_KEY", ""))
     url = "https://api.semanticscholar.org/graph/v1/paper/search"
     fields = "title,authors,year,abstract,citationCount,url,venue,publicationDate"
 

@@ -41,6 +41,7 @@ description: Lightweight pattern-driven research ideation with no script depende
 - 证伪计划：一个最小实验，若结果为 X 则该 idea 直接否定
 - 最小验证实验：数据集 / baseline / 指标 / 预期现象（≤1 GPU·天量级）
 - 预判风险：最可能被审稿人攻击的一点
+- 快速撞车预查：method-signature 一句话查询 + 命中的最近邻工作（标题+一句话机制）+ 初判（清晰/存疑）
 ```
 
 ## 流程
@@ -48,8 +49,17 @@ description: Lightweight pattern-driven research ideation with no script depende
 1. 读缺口矩阵与领域模块，列出 3-6 个候选缺口（优先矛盾格、脆弱格、失败现象）。
 2. 10 个模式 × 候选缺口做笛卡尔扫描，粗筛出 12-20 个组合。
 3. 每个组合展开成 idea card 草稿；淘汰：机制说不具体的、洞察一栏写不出失败归因的、证伪计划写不出来的。
-4. 留 5-10 张卡，按"洞察强度 × 可行性 × 撞车风险（拥挤格降权）"排序。
-5. 输出到 `research_run/<课题slug>/stage1_ideas/idea_cards.md`，并提示下一步：入选卡逐个过 scoop-check + idea-critic。
+4. **快速撞车预查（强制，防返工）**：对存活的每张卡，用其核心机制拼一条
+   method-signature 查询（5-8 词），走 paper-search 查一轮（每卡 1 次查询即可，
+   加 `--out` 落盘避免刷屏）；把最近邻命中写入卡片的"快速撞车预查"栏。
+   **命名界线规则**：卡片里凡是写了"与 X 的界线 / unlike X"式定位的，X 的机制
+   描述不得凭文献综述阶段的摘要级印象——要么当场核对 X 的全文/详细摘要确认界线
+   成立，要么在卡上把该界线标注为 `未核验`（scoop-check 阶段会强制全文核验）。
+   试跑教训：一张卡因把界线论文的训练期机制误记为推理期机制，通过了筛选和评审后
+   才在 scoop 复查中撞车，整轮返工。预查命中高重叠的卡直接降权或淘汰，省下后续
+   scoop-check + idea-critic 的全部成本。
+5. 留 5-10 张卡，按"洞察强度 × 可行性 × 撞车风险（拥挤格降权、预查存疑降权）"排序。
+6. 输出到 `research_run/<课题slug>/stage1_ideas/idea_cards.md`，并提示下一步：入选卡逐个过 scoop-check + idea-critic。
 
 **本整合包契约：**产物写 `research_run/<课题slug>/stage1_ideas/idea_cards.md`（单文件，
 包含多个候选卡）；脱离 `research-pipeline` 单独调用时，退当前工作目录。

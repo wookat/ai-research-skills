@@ -38,7 +38,7 @@ def search_papers_by_dblp(
             "f": offset,
         }
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=30)
 
         if response.status_code == 429:
             print("Rate limited. Waiting 3 seconds...")
@@ -112,7 +112,7 @@ def _fetch_abstract_from_doi(url: str) -> str:
         resp = requests.get(
             f"https://api.crossref.org/works/{doi}",
             headers={"Accept": "application/json"},
-            timeout=10,
+            timeout=30,
         )
         if resp.status_code == 200:
             data = resp.json()

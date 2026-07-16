@@ -3,6 +3,7 @@
 
 import os
 import argparse
+import sys
 import time
 from datetime import datetime
 from typing import Optional
@@ -97,21 +98,30 @@ def _query_match(query: str, paper: dict) -> bool:
     return all(tok in hay for tok in q.split())
 
 
-def _fetch_venue_notes(v2_client, v1_client, venue: str) -> list:
-    """Fetch notes from a venue, trying v2 API first then v1."""
+def _fetch_venue_notes(v2_client, v1_client, venue: str, errors: list) -> list:
+    """Fetch notes from a venue, trying v2 API first then v1.
+
+    Failures are recorded in ``errors`` instead of being swallowed silently —
+    a dead API previously looked identical to "0 matching papers", which is
+    exactly the silent degradation scoop-check must not tolerate.
+    """
+    last_err = None
     try:
         notes = v2_client.get_all_notes(content={"venueid": venue})
         if notes:
             return notes
-    except Exception:
-        pass
+    except Exception as e:
+        last_err = e
     for inv_suffix in ("/-/Blind_Submission", "/-/Submission"):
         try:
             notes = v1_client.get_all_notes(invitation=f"{venue}{inv_suffix}")
             if notes:
                 return notes
-        except Exception:
+        except Exception as e:
+            last_err = e
             continue
+    if last_err is not None:
+        errors.append((venue, last_err))
     return []
 
 
@@ -138,8 +148,9 @@ def search_papers_by_openreview(
     v2_client, v1_client = _openreview_clients()
 
     papers: list[dict] = []
+    errors: list = []
     for venue in venues:
-        notes = _fetch_venue_notes(v2_client, v1_client, venue)
+        notes = _fetch_venue_notes(v2_client, v1_client, venue, errors)
         for n in notes:
             paper = _or_note_to_paper(n, venue)
             if paper is None:
@@ -152,6 +163,23 @@ def search_papers_by_openreview(
             if len(papers) >= max_results:
                 return papers
         time.sleep(0.2)
+
+    if errors:
+        for venue, err in errors:
+            print(f"[openreview] venue {venue} failed: {err}", file=sys.stderr)
+
+    # Every venue errored and nothing was retrieved: this is a source failure,
+    # not "no matching papers". Raise so the aggregator reports it as an ERROR.
+    if not papers and errors and len(errors) == len(venues):
+        sample = errors[0][1]
+        hint = ""
+        if "Challenge" in str(sample) or "403" in str(sample):
+            hint = (" — OpenReview now blocks anonymous API access with an anti-bot "
+                    "challenge; set OPENREVIEW_USER / OPENREVIEW_PASS (free account) "
+                    "in the environment or a .env file to authenticate.")
+        raise RuntimeError(
+            f"all {len(venues)} OpenReview venues failed (e.g. {sample}){hint}"
+        )
 
     return papers
 
