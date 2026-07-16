@@ -1,0 +1,14 @@
+# Runtime deps for the pack's bundled tools and skill scripts.
+# Install: pip install -r requirements.txt
+pyyaml
+requests
+# paper-search sources
+openreview-py       # OpenReview (under-review scoop checks) — without it the source silently returns 0 results
+scholarly           # Google Scholar (optional source; proxy often required)
+# statistics (statistical-testing skill)
+numpy
+scipy
+pandas
+statsmodels
+# dev / CI
+pytest

@@ -18,9 +18,18 @@ paper-verification）调用。
 1. **首选：不同模型**。若环境有第二个模型 CLI（如 `codex exec`、`gemini`），
    把评审 prompt + 文件路径交给它，只读模式，输出落盘。
 2. **次选：零上下文子任务**。同模型但开全新上下文（子 agent / 新会话），
-   只给被评审的文件本身。
+   只给被评审的文件本身。各平台的具体落地方式（不要因为"没有 codex CLI"就直接
+   滑到兜底 3）：
+   - **Devin 网页版**：用 devin_mcp 创建子会话（create session），子会话 prompt 只含
+     评审指令 + 被评文件内容/仓库路径，不得包含主会话的任何历史结论；用
+     devin_session_gather 等待结果落盘。
+   - **Claude Code**：Task 子 agent（新上下文）或 `claude -p` 新进程。
+   - **Cursor / 其他**：新开对话窗口人工中转，或降到兜底 3。
 3. **兜底：自我评审 + 显式声明**。实在无法隔离时照常评审，但在报告头部写明
    `⚠ same-context review, scores may be inflated`，且该评审不得作为决策卡 #2/#4 的唯一依据。
+   结构层面的后盾：`run_state.py accept` 会拒绝 executor 与 reviewer 同族的验收
+   （同族只能 mark-provisional），所以兜底评审永远无法把阶段刷成 accepted——
+   如实记录真实裁决者，不要用编造的 reviewer 名绕过。
 
 ## 铁律（REVIEWER_BIAS_GUARD）
 

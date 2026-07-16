@@ -50,6 +50,16 @@ Send all three queries to the **`paper-search`** skill (bundled in this pack, si
 
 Because the three queries hit arXiv as separate process invocations, pace them so adjacent arXiv requests are **≥ 4 s apart** to avoid triggering the rate limit (HTTP 429) that silently zeroes out the connector. `paper-search`'s arXiv module enforces this automatically via a cross-process file lock (`arxiv_search_throttle.lock` in the temp dir), so concurrent/back-to-back queries queue and each request fires ≥ 4 s after the previous one — you do not need to add manual sleeps, but do not bypass that module by calling arXiv directly. Override the interval only via the `ARXIV_MIN_INTERVAL` env var if needed.
 
+**Hard rule — source availability (no silent degradation).** Before the first query, run
+`python3 <pack-root>/tools/self_check.py --online` (or at minimum confirm the `openreview`
+source returns results). OpenReview is the only source that surfaces *under-review*
+collisions — the most dangerous kind. If the openreview source is unavailable (missing
+`openreview-py`, dead API, zero-result malfunction), the final verdict of this scoop-check
+**must be downgraded to `provisional`** and the report must state which sources were
+actually live. Never present a verdict as final when a required source was silently dead.
+The same applies if you bypassed `paper-search` entirely (e.g. hand-rolled queries):
+record the degradation and downgrade the verdict.
+
 Then merge the results across all three queries and deduplicate by title (normalize case and whitespace before comparing).
 
 After the search-based results are merged, augment the set with **additional papers recalled from your own training knowledge** that are directly relevant to the Research problem or Novelty but did not surface in the search results. The reason for this step: `paper-search` depends on keyword matches against indexed sources and routinely misses landmark or tangentially-phrased prior work that you nonetheless know about — and missing the canonical reference is the most common way a novelty check fails. Add these recalled papers with the same fields as the searched ones (Title, Date, Source if known) so they flow through the rest of the pipeline identically.

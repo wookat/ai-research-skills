@@ -27,6 +27,24 @@ research_run/<slug>/
   decision_cards/        # 决策卡（等待人类批示）
 ```
 
+## 启动自检清单（进入任何阶段前必须执行，不可凭记忆跳过）
+
+试跑教训：agent 凭记忆行事会绕过状态机和脚本化检索，直接手写检索漏掉过关键威胁
+论文。因此每次启动/恢复一个 run，先依次执行这三条（结果记入 state.md）：
+
+```bash
+# 1. 包自检：依赖、脚本语法、（可选 --online）检索源存活
+python3 tools/self_check.py --online
+# 2. 注册/恢复状态机（阶段推进只认 run_state，不认 agent 口头声明）
+python3 tools/run_state.py start research_run/<slug> <run_id> --phases "stage0,...,stage8"
+python3 tools/run_state.py resume research_run/<slug> <run_id>
+# 3. 定位领域文件（见下文"领域模块"节）；无对应文件则记录缺失
+```
+
+任何一条失败：能修则修（pip install -r requirements.txt）；不能修则在 state.md
+记录降级原因与影响面（例：openreview 源不可用 → 本 run 所有 scoop 结论只能为
+provisional）。**禁止静默降级。**
+
 ## 阶段图与对应 skill
 
 | 阶段 | Skill | 产物 | 决策卡 |
@@ -70,7 +88,21 @@ research_run/<slug>/
 paper-verification）必须遵守 **cross-model-review 协议**：零上下文新线程、优先跨模型、
 禁止同线程续评、禁止按时钟重跑刷分。
 
-产出决策卡后**停止推进并通知人类**。人类批示记入 `state.md` 后才能进入下一阶段。
+决策卡**用工具生成而非手写**（模板一致、并自动在 state.md 记一条"等待批示"条目）：
+
+```bash
+python3 tools/run_state.py new-card research_run/<slug> card_<N>_<名称> --title "<标题>"
+```
+
+产出决策卡后**停止推进并通知人类**（Devin：用 user_question 消息附选项；Claude Code：
+AskUserQuestion；其他平台：明文列选项等待回复——只把卡写进文件不算通知）。
+人类批示记入 `state.md` 后才能进入下一阶段，**批示行必须是结构化格式**（run_state.py
+只认这一格式，否定句/单纯提及卡号不构成授权）：
+
+```
+人类批示：card_<N>_<名称> → <选项/裁决>     # 或英文：APPROVED card_<N>_<名称> -> <裁决>
+```
+
 决策卡以外的一切执行细节不要询问人类，自行决定并记录。
 
 **结构性强制（run_state.py）**：若本包 `tools/run_state.py` 可用（按

@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import tempfile
 from contextlib import contextmanager
@@ -134,28 +135,89 @@ def _save(root: str, run_id: str, state: dict) -> None:
             raise
 
 
+# A state.md line only counts as a human approval when it carries an explicit
+# approval marker next to the card id. Mere mention of the id (e.g. "card_9
+# 的申请已被拒绝") is NOT authorization.
+_APPROVAL_MARKER_RE = re.compile(r"(?:\bAPPROVED\b|批准|人类批示\s*[:：])")
+_REJECTION_MARKER_RE = re.compile(
+    r"(?:\bREJECTED\b|\bDENIED\b|\bREVOKED\b|拒绝|驳回|否决|撤销|收回)")
+
+
 def verify_decision_card(root: str, card_id: str) -> None:
     """Hard gate for human-authorized escape hatches (--force / --provisional-advances).
 
     The card id must be recorded in ``<root>/state.md`` — the pipeline's ledger of
-    human decisions. Passing an arbitrary string is not authorization: if state.md
-    is missing or does not mention the card id, the escape hatch stays closed.
-    ``card_0_autopilot`` (the blanket autopilot authorization card) is verified the
-    same way: it too must be recorded in state.md by a human before it authorizes
-    anything.
+    human decisions — on a line that carries an explicit approval marker
+    (``APPROVED``, ``批准``, or ``人类批示：``) and no rejection marker. Substring
+    presence alone is not authorization: "card_9 的申请已被拒绝" must not open the
+    escape hatch. ``card_0_autopilot`` (the blanket autopilot authorization card)
+    is verified the same way.
     """
     if not card_id or not card_id.strip():
         raise ValueError("decision card id must be a non-empty string")
+    card_id = card_id.strip()
     state_md = Path(root) / "state.md"
     if not state_md.exists():
         raise ValueError(
             f"decision card {card_id!r} cannot be verified: {state_md} does not exist. "
             "Escape hatches require a human approval recorded in state.md.")
     text = state_md.read_text(encoding="utf-8", errors="replace")
-    if card_id not in text:
+    for line in text.splitlines():
+        if card_id not in line:
+            continue
+        if _APPROVAL_MARKER_RE.search(line) and not _REJECTION_MARKER_RE.search(line):
+            return
+    raise ValueError(
+        f"decision card {card_id!r} has no approval line in {state_md} — refusing the "
+        "escape hatch. A human must record the approval on one line containing both "
+        f"an approval marker (APPROVED / 批准 / 人类批示：) and the card id, e.g. "
+        f"'人类批示：{card_id} → 通过'. Lines that merely mention the id, or that "
+        "carry a rejection marker, do not authorize.")
+
+
+_CARD_TEMPLATE = """# 决策卡 {card_id} — {title}
+
+## 阶段结论（≤5 行）
+（执行 agent 填写：本阶段做了什么、关键发现、为什么需要人类拍板）
+
+## 证据摘要
+（列出产物文件路径与关键数据；每条结论都要能追溯到文件）
+
+## 选项
+- A. …（收益 / 风险 / 成本）
+- B. …
+- C. …
+
+## Agent 推荐
+（推荐哪个选项 + 理由；若处于 autopilot，记录裁决者与裁决依据）
+
+## 等待批示
+人类批示后，请在 state.md 追加一行（run_state.py 只认这个格式）：
+人类批示：{card_id} → <选项/裁决>
+"""
+
+
+def new_card(root: str, card_id: str, title: str) -> Path:
+    """Generate a decision-card template under <root>/decision_cards/ and log a
+    PENDING (non-approval) entry in state.md. The approval line itself must be
+    added by a human — this helper never writes an approval marker.
+    """
+    if not re.fullmatch(r"card_[A-Za-z0-9_\-\u4e00-\u9fff]+", card_id or ""):
         raise ValueError(
-            f"decision card {card_id!r} is not recorded in {state_md} — refusing the "
-            "escape hatch. A human must record the approval (card id) in state.md first.")
+            f"invalid card id {card_id!r}: expected card_<suffix> "
+            "(letters, digits, _, -, CJK)")
+    cards_dir = Path(root) / "decision_cards"
+    cards_dir.mkdir(parents=True, exist_ok=True)
+    path = cards_dir / f"{card_id}.md"
+    if path.exists():
+        raise ValueError(f"decision card already exists: {path}")
+    path.write_text(_CARD_TEMPLATE.format(card_id=card_id, title=title), encoding="utf-8")
+    state_md = Path(root) / "state.md"
+    with open(state_md, "a", encoding="utf-8") as f:
+        # Wording deliberately avoids the approval markers (人类批示：/APPROVED)
+        # so this pending entry can never satisfy verify_decision_card.
+        f.write(f"- {_now()} 决策卡 {card_id} 已产出（{title}），等待批示。文件：{path}\n")
+    return path
 
 
 def start_run(root: str, run_id: str, phases: list[str], executor: Optional[str] = "claude",
@@ -352,6 +414,7 @@ def main() -> int:
     s = sub.add_parser("set"); s.add_argument("root"); s.add_argument("run_id"); s.add_argument("phase"); s.add_argument("status", choices=sorted(EXECUTOR_STATUSES)); s.add_argument("--artifact")
     s = sub.add_parser("accept"); s.add_argument("root"); s.add_argument("run_id"); s.add_argument("phase"); s.add_argument("--verdict-id", required=True); s.add_argument("--reviewer", required=True); s.add_argument("--force", action="store_true"); s.add_argument("--decision-card", help="human decision-card id authorizing --force (required with that flag)")
     s = sub.add_parser("mark-provisional"); s.add_argument("root"); s.add_argument("run_id"); s.add_argument("phase"); s.add_argument("--verdict-id", required=True); s.add_argument("--reviewer", required=True); s.add_argument("--executor")
+    s = sub.add_parser("new-card"); s.add_argument("root"); s.add_argument("card_id", help="card_<suffix>, e.g. card_2_立项拍板"); s.add_argument("--title", required=True)
     s = sub.add_parser("resume"); s.add_argument("root"); s.add_argument("run_id")
     s = sub.add_parser("status"); s.add_argument("root"); s.add_argument("run_id")
     s = sub.add_parser("list"); s.add_argument("root")
@@ -376,6 +439,8 @@ def main() -> int:
             if a.force:
                 verify_decision_card(a.root, a.decision_card)
             _print_status(accept(a.root, a.run_id, a.phase, a.verdict_id, a.reviewer, force=a.force))
+        elif a.cmd == "new-card":
+            print(new_card(a.root, a.card_id, a.title))
         elif a.cmd == "mark-provisional":
             _print_status(mark_provisional(a.root, a.run_id, a.phase, a.verdict_id, a.reviewer, executor=a.executor))
         elif a.cmd == "resume":
