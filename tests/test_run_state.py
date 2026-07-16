@@ -325,3 +325,69 @@ def test_verify_decision_card_rejects_empty_id():
             except ValueError:
                 raised = True
             assert raised, "empty card id must be rejected"
+
+
+def test_verify_decision_card_rejects_mention_without_approval_marker():
+    with _tmp() as d:
+        (Path(d) / "state.md").write_text(
+            "# state\n- card_9 的申请材料已经收到，等待审核\n", encoding="utf-8")
+        try:
+            rs.verify_decision_card(d, "card_9")
+            raised = False
+        except ValueError:
+            raised = True
+        assert raised, "a bare mention of the card id must not authorize"
+
+
+def test_verify_decision_card_rejects_rejection_line():
+    with _tmp() as d:
+        for line in ("人类批示：card_9 → 拒绝",
+                     "card_9 的申请已被拒绝",
+                     "APPROVED card_9 was later REVOKED"):
+            (Path(d) / "state.md").write_text(f"# state\n{line}\n", encoding="utf-8")
+            try:
+                rs.verify_decision_card(d, "card_9")
+                raised = False
+            except ValueError:
+                raised = True
+            assert raised, f"rejection/negation line must not authorize: {line!r}"
+
+
+def test_verify_decision_card_accepts_english_approved_marker():
+    with _tmp() as d:
+        (Path(d) / "state.md").write_text(
+            "# state\nAPPROVED card_2_立项拍板 -> option A\n", encoding="utf-8")
+        rs.verify_decision_card(d, "card_2_立项拍板")  # must not raise
+
+
+def test_new_card_creates_template_and_pending_entry():
+    with _tmp() as d:
+        p = rs.new_card(d, "card_3_实验放行", "实验方案拍板")
+        assert p.exists() and "card_3_实验放行" in p.read_text(encoding="utf-8")
+        state_text = (Path(d) / "state.md").read_text(encoding="utf-8")
+        assert "card_3_实验放行" in state_text
+        # the pending entry must NOT itself count as an approval
+        try:
+            rs.verify_decision_card(d, "card_3_实验放行")
+            raised = False
+        except ValueError:
+            raised = True
+        assert raised, "new_card's pending entry must not self-authorize"
+        # duplicate card ids are refused
+        try:
+            rs.new_card(d, "card_3_实验放行", "again")
+            dup = False
+        except ValueError:
+            dup = True
+        assert dup
+
+
+def test_new_card_rejects_bad_id():
+    with _tmp() as d:
+        for bad in ("nocard", "card_", "card_3/../evil", ""):
+            try:
+                rs.new_card(d, bad, "t")
+                raised = False
+            except ValueError:
+                raised = True
+            assert raised, f"bad card id must be rejected: {bad!r}"

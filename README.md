@@ -90,6 +90,17 @@ ARIS 原实现，MIT，见 ATTRIBUTION.md）：`research_wiki.py`（研究 wiki 
 `skills/shared-references/reviewer-adapter.md`：有 MCP 走 MCP，没有则自动降到
 CLI / 子会话 / 新对话人工中转，四平台都能用。
 
+依赖安装与自检（任何平台装好后先跑一次）：
+
+```bash
+pip install -r requirements.txt
+python3 tools/self_check.py --online   # 依赖 / 脚本语法 / 检索源存活
+```
+
+`openreview-py` 是必需依赖：缺失时 paper-search 的 OpenReview 源会静默返回 0 结果，
+而它是查在审撞车论文的唯一渠道——scoop-check 已将其列为硬规则（源不可用 → 结论只能
+provisional）。
+
 `domains/` 目录与 skills 平级放置；各 skill 会按需读取 `domains/<领域>.md`。
 
 ### 全局安装时 domains/ 与 tools/ 的解析顺序
